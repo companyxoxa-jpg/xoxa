@@ -1,6 +1,6 @@
 import { Image } from "@/components/ui/image";
 import { Clock } from "lucide-react";
-import { formatCurrency } from "@/lib/format";
+import { formatServicePrice } from "@/lib/format";
 
 const SPA_RITUAL_IMAGES = [
   "https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?auto=format&fit=crop&w=900&q=88",
@@ -40,7 +40,7 @@ export default function SpaServices({ services, selected, onSelect, branding }) 
               <div className={spacious ? "p-6" : "p-5"}>
                 <div className="flex items-start justify-between gap-3">
                   <h3 className={`${headFont} font-semibold text-foreground text-lg leading-tight`} style={{ letterSpacing: "-0.01em" }}>{s.name}</h3>
-                  <p className="font-semibold whitespace-nowrap" style={{ color: accent }}>{formatCurrency(s.price)}</p>
+                  <p className="font-semibold whitespace-nowrap" style={{ color: accent }}>{formatServicePrice(s.price, s.price_type)}</p>
                 </div>
                 {s.description && <p className="text-sm text-muted-foreground mt-2 leading-relaxed line-clamp-2">{s.description}</p>}
                 <div className="flex items-center justify-between mt-4">

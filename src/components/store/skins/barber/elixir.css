@@ -1,0 +1,83 @@
+/* ELIXIR's identity is scoped to its own public storefront only. */
+.barber-experience[data-elixir="true"] {
+  --background: 0 0% 4%;
+  --foreground: 45 10% 94%;
+  --card: 0 0% 8%;
+  --card-foreground: 45 10% 94%;
+  --popover: 0 0% 8%;
+  --popover-foreground: 45 10% 94%;
+  --primary: 45 78% 55%;
+  --primary-foreground: 0 0% 5%;
+  --secondary: 45 78% 55%;
+  --secondary-foreground: 0 0% 5%;
+  --muted: 0 0% 12%;
+  --muted-foreground: 0 0% 68%;
+  --accent: 45 78% 55%;
+  --accent-foreground: 0 0% 5%;
+  --border: 0 0% 19%;
+  --input: 0 0% 19%;
+  --ring: 45 78% 55%;
+  color: #f5f3ee;
+  background:
+    radial-gradient(ellipse at 85% 8%, rgb(216 177 53 / 7%), transparent 34rem),
+    #090909;
+}
+
+.barber-experience[data-elixir="true"] h1,
+.barber-experience[data-elixir="true"] h2,
+.barber-experience[data-elixir="true"] h3 {
+  font-family: var(--font-heading);
+  letter-spacing: -0.025em;
+}
+
+.barber-experience[data-elixir="true"] header {
+  background-color: rgb(9 9 9 / 94%);
+  border-color: rgb(231 186 50 / 18%);
+}
+
+.barber-experience[data-elixir="true"] header button:not([aria-label]) {
+  background: #e7ba32 !important;
+  color: #090909 !important;
+}
+
+.barber-experience[data-elixir="true"] #servicios button,
+.barber-experience[data-elixir="true"] #profesionales button {
+  border-color: rgb(231 186 50 / 22%);
+  background-color: #101010;
+  box-shadow: 0 12px 36px rgb(0 0 0 / 22%);
+}
+
+.barber-experience[data-elixir="true"] #servicios button:hover,
+.barber-experience[data-elixir="true"] #profesionales button:hover {
+  border-color: rgb(231 186 50 / 72%);
+  transform: translateY(-2px);
+}
+
+.barber-experience[data-elixir="true"] #reservar [aria-pressed="true"] {
+  color: #090909 !important;
+}
+
+.barber-experience[data-elixir="true"] #reservar [type="date"] {
+  color-scheme: dark;
+}
+
+.barber-experience[data-elixir="true"] #reservar input:not([type="checkbox"]),
+.barber-experience[data-elixir="true"] #reservar textarea {
+  color: #f5f3ee;
+}
+
+.barber-experience[data-elixir="true"] #productos {
+  border-color: rgb(231 186 50 / 48%);
+  background-image: linear-gradient(135deg, #111 0%, #070707 70%);
+}
+
+.barber-experience[data-elixir="true"] :where(a, button, input, select, textarea):focus-visible {
+  outline-color: #e7ba32;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .barber-experience[data-elixir="true"] #servicios button:hover,
+  .barber-experience[data-elixir="true"] #profesionales button:hover {
+    transform: none;
+  }
+}

@@ -12,6 +12,11 @@ export function formatCurrency(cents, currency = "EUR") {
   }).format(cents / 100);
 }
 
+/** Format a booking service price, preserving the catalog's starting-price contract. */
+export function formatServicePrice(cents, priceType = "fixed", currency = "EUR") {
+  return `${priceType === "from" ? "Desde " : ""}${formatCurrency(cents, currency)}`;
+}
+
 /**
  * Format a unit price badge, e.g. "1,89 €/kg".
  */

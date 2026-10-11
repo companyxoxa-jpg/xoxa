@@ -5,7 +5,7 @@ import { base44 } from "@/api/base44Client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useStoreBranding } from "@/lib/storeContext";
-import { formatCurrency } from "@/lib/format";
+import { formatServicePrice } from "@/lib/format";
 import { STATE_LABELS } from "../../base44/shared/booking.js";
 
 export default function GuestBookingLookup() {
@@ -77,7 +77,7 @@ export default function GuestBookingLookup() {
             <p className="flex items-center gap-2 text-sm"><UserRound className="w-4 h-4 text-muted-foreground" />{result.professional_name}</p>
             <p className="flex items-center gap-2 text-sm"><CalendarDays className="w-4 h-4 text-muted-foreground" />{result.date}</p>
             <p className="flex items-center gap-2 text-sm"><Clock className="w-4 h-4 text-muted-foreground" />{result.start_time}–{result.end_time} · {result.timezone}</p>
-            <p className="font-semibold">{formatCurrency(result.price)}</p>
+            <p className="font-semibold">{formatServicePrice(result.price, result.price_type)}</p>
             <p className="text-xs text-muted-foreground break-all">Referencia: {result.reference}</p>
           </section>
           <button onClick={() => { setResult(null); setError(""); }} className="w-full py-3 rounded-xl border border-border text-foreground font-medium">Consultar otra reserva</button>
