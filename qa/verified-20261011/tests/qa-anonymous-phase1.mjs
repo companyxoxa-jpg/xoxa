@@ -1,0 +1,6 @@
+import fs from 'node:fs/promises';
+const app='6aca8950491b4b2d74f6f62d',origin=`https://preview-sandbox--${app}.base44.app`;
+const publicNames=new Set(['BillingWebhook','BookingPublic','CreateOrder','GetStorefront','GuestOrderLookup','ResolveBusiness','TrackOrder']);
+const names=(await fs.readdir('./rinno-protected-source/base44/functions')).filter(n=>!publicNames.has(n));const checks=[];
+for(const fn of names){try{const r=await fetch(`${origin}/api/apps/${app}/functions/${fn}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'list'}),signal:AbortSignal.timeout(20000)});const t=await r.text();checks.push({id:'T12',fn,http:r.status,status:[401,403].includes(r.status)?'APROBADO':'NO VERIFICADO',response:t.replace(/(?:sk_live_|sk_test_|whsec_|Bearer\s+)[A-Za-z0-9._-]+/g,'[REDACTED]').slice(0,500)});}catch{checks.push({id:'T12',fn,status:'NO VERIFICADO',error:'Transport timeout/error'});}}
+await fs.writeFile('../outputs/RINNO-QA-ANONIMOS-FASE1.json',JSON.stringify({app,at:new Date().toISOString(),scope:'Real hosted unauthenticated request action=list for 60 entrypoints, not branch-complete coverage',checks},null,2));console.log(JSON.stringify({count:checks.length,passed:checks.filter(x=>x.status==='APROBADO').length,remaining:checks.filter(x=>x.status!=='APROBADO')}));

@@ -1,0 +1,204 @@
+{
+  "name": "BusinessSettings",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string"
+    },
+    "schedule": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "day": {
+            "type": "integer",
+            "description": "0=Sunday ... 6=Saturday"
+          },
+          "closed": {
+            "type": "boolean"
+          },
+          "morning_open": {
+            "type": "string"
+          },
+          "morning_close": {
+            "type": "string"
+          },
+          "afternoon_open": {
+            "type": "string"
+          },
+          "afternoon_close": {
+            "type": "string"
+          },
+          "continuous": {
+            "type": "boolean",
+            "description": "Single shift instead of split morning/afternoon"
+          }
+        }
+      }
+    },
+    "booking_closed_dates": {
+      "type": "array",
+      "description": "Tenant-scoped full-day closures for booking, including official holidays and business closures.",
+      "items": { "type": "string", "format": "date" },
+      "default": []
+    },
+    "accept_online_orders": {
+      "type": "boolean",
+      "default": true
+    },
+    "minimum_order": {
+      "type": "integer",
+      "description": "Minimum order amount in cents"
+    },
+    "min_lead_time_minutes": {
+      "type": "integer",
+      "default": 60
+    },
+    "allow_scheduled_orders": {
+      "type": "boolean",
+      "default": true
+    },
+    "max_future_days": {
+      "type": "integer",
+      "default": 7
+    },
+    "pickup_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "own_delivery_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "external_delivery_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "max_delivery_radius_km": {
+      "type": "number"
+    },
+    "delivery_fee": {
+      "type": "integer",
+      "description": "Delivery fee in cents"
+    },
+    "free_delivery_threshold": {
+      "type": "integer",
+      "description": "Free delivery above this amount in cents"
+    },
+    "store_message": {
+      "type": "string"
+    },
+    "store_description": {
+      "type": "string"
+    },
+    "cover_image": {
+      "type": "string"
+    },
+    "social_links": {
+      "type": "object",
+      "properties": {
+        "instagram": {
+          "type": "string"
+        },
+        "facebook": {
+          "type": "string"
+        },
+        "twitter": {
+          "type": "string"
+        },
+        "threads": {
+          "type": "string"
+        },
+        "tiktok": {
+          "type": "string"
+        }
+      }
+    },
+    "whatsapp_phone": {
+      "type": "string"
+    },
+    "temporary_notice": {
+      "type": "string"
+    },
+    "online_store_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "association_modules": {
+      "type": "object",
+      "description": "Asociaciones functional module flags (NOT presentation — use appearance_config for visuals). Additive; 'memberships', 'fees' and 'credential' are operative (A1/A2/A3). Other flags are prepared but enable no functionality yet.",
+      "properties": {
+        "memberships": {
+          "type": "boolean",
+          "default": true
+        },
+        "fees": {
+          "type": "boolean",
+          "default": true
+        },
+        "credential": {
+          "type": "boolean",
+          "default": true
+        },
+        "activities": {
+          "type": "boolean",
+          "default": true
+        },
+        "communications": {
+          "type": "boolean",
+          "default": false
+        },
+        "incidents": {
+          "type": "boolean",
+          "default": false
+        },
+        "documents": {
+          "type": "boolean",
+          "default": false
+        },
+        "wallet": {
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "default": {}
+    }
+  },
+  "required": [
+    "business_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.business_id": "{{user.data.business_id}}"
+        },
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "companyxoxa@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "ax.network.hub@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "xoxamariles@gmail.com"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

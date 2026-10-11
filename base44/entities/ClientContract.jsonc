@@ -1,0 +1,30 @@
+{
+  "name": "ClientContract",
+  "type": "object",
+  "properties": {
+    "contract_number": { "type": ["string", "null"], "maxLength": 32 },
+    "contract_year": { "type": ["integer", "null"] },
+    "client_name": { "type": "string", "maxLength": 180 },
+    "trade_name": { "type": "string", "maxLength": 180 },
+    "tax_id": { "type": "string", "maxLength": 40 },
+    "representative_name": { "type": "string", "maxLength": 160 },
+    "representative_id": { "type": "string", "maxLength": 40 },
+    "contact_email": { "type": "string", "format": "email" },
+    "contact_phone": { "type": "string", "maxLength": 40 },
+    "payment_method": { "type": "string", "enum": ["stripe", "direct_debit", "transfer", "other"] },
+    "status": { "type": "string", "enum": ["draft", "pending_signature", "signed", "active", "cancelled"], "default": "draft" },
+    "data_json": { "type": "string" },
+    "client_signature": { "type": ["string", "null"] },
+    "rinno_signature": { "type": ["string", "null"] },
+    "pdf_base64": { "type": ["string", "null"] },
+    "pdf_sha256": { "type": ["string", "null"], "maxLength": 64 },
+    "created_by": { "type": "string" },
+    "created_by_email": { "type": "string", "format": "email" },
+    "commercial_email": { "type": ["string", "null"], "format": "email" },
+    "previous_contract_id": { "type": ["string", "null"] },
+    "signed_at": { "type": ["string", "null"], "format": "date-time" },
+    "cancelled_at": { "type": ["string", "null"], "format": "date-time" }
+  },
+  "required": ["client_name", "trade_name", "tax_id", "representative_name", "representative_id", "contact_email", "contact_phone", "payment_method", "status", "data_json", "created_by", "created_by_email"],
+  "rls": { "read": false, "create": false, "update": false, "delete": false }
+}

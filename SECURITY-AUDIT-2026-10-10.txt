@@ -1,0 +1,84 @@
+RINNO — BLOQUE 1: SEGURIDAD EN DESARROLLO
+10 de octubre de 2026
+
+ALCANCE Y ESTADO
+Trabajo local en development/security-audit, sobre la copia protegida de C:\Users\PC\Documents\Codex\2026-10-10\pu\work\rinno-protected-source.
+Base de trabajo: 6df48c4f4d130b79c2391518253aa345c6bc8e88.
+No se ha conectado a producción ni sincronizado, desplegado o modificado Base44; no se han realizado llamadas a Stripe, pagos, borrados reales o rotación de claves. Solo se consultó documentación pública de Stripe.
+Este informe acredita correcciones y regresión local. No constituye certificación de seguridad de la aplicación publicada.
+
+HALLAZGOS Y CORRECCIONES
+
+S01 — CRÍTICA, condicionada a la aplicación de permisos de User en Base44.
+business_id y rinno_role, utilizados como autoridad por el backend, no tenían restricciones explícitas de escritura en el esquema local. support_business_id ni siquiera estaba definido. Si updateMe admite esos campos, una cuenta podría adjudicarse otro negocio y privilegios de propietario.
+Corrección: restricciones de creación, modificación y borrado de los tres campos; solo las funciones con service role los asignan. Se conserva el rol protegido de plataforma como requisito del Super Admin.
+Prueba: guardas de esquema para los tres campos. Pendiente obligatorio: comprobar rechazo real de updateMe, registro y variantes de campos anidados con cuentas independientes. Las pruebas locales NO demuestran que Base44 aplique FLS a su entidad User incorporada. No publicar sin resolverlo.
+
+S02 — CRÍTICA para RoleAssignment; ALTA para las demás escrituras sensibles.
+La API directa de entidades permitía a usuarios del mismo negocio modificar roles, pagos de socios, miembros, pedidos, ajustes y otros registros sin pasar por requirePermission, las listas de campos o la trazabilidad del backend.
+Corrección: create/update/delete cerrados en todas las entidades administradas por funciones. Excepciones conservadas: User (campos protegidos) y SavedAddress (operaciones con SDK autenticado y propiedad por creador). La interfaz existente ya envía las mutaciones a funciones; no se introduce un flujo nuevo.
+Las entidades internas de asociaciones dejan de exponer lectura directa: Activity, Credential, Enrollment, Member, MemberFee, MemberPayment, Membership, MembershipPlan, PaymentAllocation y RoleAssignment. La publicación de actividades continúa por GetStorefront.
+SavedAddress no permite cambiar o borrar business_id después de su creación.
+Prueba: políticas de las 52 entidades inspeccionadas; regresión del backend y navegador. Pendiente: evaluación RLS real y API directa en Base44.
+
+S03 — ALTA: inyección de filtros en endpoints públicos.
+TrackOrder aceptaba un objeto en token. GuestOrderLookup aceptaba un objeto en order_number. El contrato de filtros admite operadores tipo Mongo; {$ne:null} podía seleccionar registros sin conocer el identificador exacto. En GuestOrderLookup todavía se exigía contacto coincidente, pero se eludía la referencia.
+Corrección: exigir cadenas acotadas en token/referencia, tipos válidos para contacto y slug. GetStorefront y CreateOrder también rechazan slugs que no sean texto. Los detalles públicos de pedidos filtran por pedido Y negocio.
+Prueba: ataques con objeto, array, número y booleano rechazados antes de consultar entidades; referencias válidas siguen funcionando. Pruebas con adaptador que interpreta $ne, sin solicitudes a producción.
+
+S04 — ALTA: bypass de las restricciones de lectura de facturación.
+Subscription permitía lectura directa a cualquier usuario con el mismo business_id, pese a que ManageBilling exige propietario. Las excepciones de lectura por role=admin tampoco reflejaban la lista de Super Admin de RINNO.
+Corrección: lectura directa de suscripciones reservada a los administradores de plataforma autorizados; propietarios usan ManageBilling. Se restringen las excepciones administrativas de lectura de las entidades afectadas a rol protegido y correo autorizado.
+Prueba: política de lectura comprobada y recorridos por rol conservados. Pendiente: sesiones reales y lectura directa del SDK.
+
+S05 — ALTA: activación de servicio sin pago confirmado.
+processBillingEvent activaba el periodo de prueba al recibir checkout.session.completed sin exigir payment_status=paid.
+Corrección: los checkouts no pagados, de pago no necesario o sin estado se ignoran sin escrituras ni activación. No se crean registros de cobro sin identificador de PaymentIntent. Se mantienen importes, planes, IVA y calendario comercial.
+Prueba: tres variantes sin pago producen cero escrituras; regresión de calendario, cobros, cancelación y facturación correcta. No se realizaron pagos ni integración Stripe real.
+
+S06 — MEDIA: robustez de firma y tratamiento de errores Stripe.
+Un timestamp no numérico podía eludir la comparación temporal si el mensaje contaba con una firma válida; esto NO permitía falsificar una firma HMAC. Tampoco se validaba la forma mínima del evento. Los errores del proveedor podían devolverse literalmente al llamante.
+Corrección: timestamp entero seguro y único, firmas hexadecimales, ventana de 300 segundos, payload mínimo válido, webhook solo POST, errores públicos genéricos y distinción entre firma inválida (400) y error de procesamiento (500). Mensajes del proveedor no se propagan al cliente.
+Prueba: HMAC real con secreto sintético efímero, modificación del cuerpo, expiración, firma ausente, timestamps inválidos, falta de secreto y errores que contienen un secreto sintético. Cero tráfico a Stripe.
+
+S07 — MEDIA, defensa adicional: permiso de asociación fuera del contexto.
+La función compartida resolveAssociationRole aplicaba el rol de propietario de A a un businessId B si otro llamante interno lo pasaba. No se ha demostrado una ruta pública explotable con los llamantes actuales.
+Corrección: resolveAssociationRole y requirePermission exigen coincidencia del negocio autenticado antes de resolver asignaciones o permisos explícitos.
+Prueba: propietario de A y asignación de B no conceden acceso a B; acceso válido en A conservado.
+
+S08 — BAJA: fallos de auditoría invisibles.
+Los fallos de escritura de AuditLog se silenciaban.
+Corrección: diagnóstico genérico en el registro del servidor, sin incluir errores del proveedor ni datos sensibles. AuditLog queda sin mutaciones directas del cliente. Se mantiene el comportamiento de no deshacer operaciones por un fallo posterior del registro.
+Prueba: actor y rol auditados se derivan del contexto autenticado y no de campos actor enviados por el cliente. Sigue pendiente conectar estos diagnósticos a alertas reales; no hay garantía transaccional de auditoría.
+
+PRUEBAS Y LÍMITES
+- Antes de corregir: cinco de seis pruebas nuevas de fronteras fallaban; dos de tres nuevas pruebas Stripe fallaban. Se conservaron evidencias locales sin secretos.
+- Resultado final Node: 318/318; 234 pruebas existentes más 84 nuevas.
+- Matriz de endpoints: 58 funciones rechazan acceso anónimo sin tocar entidades/integraciones, más pruebas de perfiles no autorizados en siete funciones administrativas.
+- Dos funciones con importaciones PDF específicas de Deno (ManageContract y ManageDocuments) no están incluidas en esa matriz runtime; se conservaron sus pruebas existentes, revisión de permisos de entrada y regresión de interfaz. No se simula una cobertura completa de Deno.
+- Pruebas adicionales: modificación y borrado de registros ajenos rechazados; operaciones válidas en el propio negocio conservadas; actor de auditoría no falsificable mediante el cuerpo.
+- Playwright: 28/28, servidor local y datos/autenticación simulados. Comercio, reservas, demos, asociaciones, configuración, roles, documentos y móvil. No prueba RLS alojado.
+- Build correcto. Lint y typecheck correctos dentro del alcance de sus configuraciones existentes; no sustituyen un chequeo Deno completo del backend. git diff --check correcto.
+- Se excluyeron artefactos generados de Git y ESLint: una ejecución paralela detectó que ESLint intentaba recorrer test-results mientras Playwright lo regeneraba. Lint se repitió correctamente tras la corrección.
+- Escaneo de patrones de claves Stripe y claves privadas: cero coincidencias en los archivos de texto versionables. No inspecciona secretos activos, historial remoto, copias externas o panel de Stripe.
+- Se recuperó sin alterarlo el PDF maestro de contratos, omitido por el inventario del respaldo inicial. SHA-256: 3259DE6554E4A826B7A3EC1F504A388C6D7708E4E9EC7DF5F9AAD682D655B807. La fuente original no se modificó.
+
+VERIFICACIONES REALES PENDIENTES / RIESGOS RESIDUALES
+1. Imprescindible antes de publicar: aplicación efectiva de FLS de User, RLS y excepciones de Super Admin; cuentas distintas A/B, propietarios, empleados, comerciales, clientes y administrador no autorizado. Revisar también perfiles existentes que ya pudieran contener roles manipulados.
+2. Validar que todos los accesos directos de lectura autorizados siguen funcionando al aplicar los esquemas. No se ha probado ningún cambio en el backend alojado.
+3. Revisar inventario del MCP público y las políticas del panel: el esquema local no prueba cuál es la configuración publicada.
+4. Stripe test: validación de firma con webhook real, ámbito test/live, importe/divisa, relación checkout-negocio-suscripción, reintentos y concurrencia. La deduplicación actual usa lectura seguida de escritura; no acredita atomicidad y considera duplicados eventos previos fallidos. Debe abordarse en la integración de facturación antes del piloto.
+5. Los métodos de pago asíncronos no se habilitan en este bloque; completar el checkout sin cobrar ya no activa el negocio. Si se habilitan, añadir la gestión del evento de pago posterior y sus pruebas.
+6. No se rotaron claves. La ausencia de claves en el código actual no descarta exposición histórica; revisar acceso y preparar rotación por separado con autorización.
+7. Los endpoints públicos de consulta necesitan revisión real de limitación de intentos y abuso. Los tokens de seguimiento son credenciales de portador; proteger enlaces y registros.
+8. La auditoría sigue sin ser transaccional. La recuperación de bloqueos y fallos de escritura inciertos necesita validación de operación real.
+
+PRÓXIMO BLOQUE RECOMENDADO
+Validación de seguridad en un entorno Base44 de pruebas autorizado antes de integración: aplicar esquemas allí, usar cuentas independientes y comprobar acceso directo e invocaciones adversarias. Después, integración Stripe en modo test con idempotencia y recuperación. Mantener producción sin cambios hasta autorización expresa y evidencia suficiente.
+
+REFERENCIAS CONSULTADAS
+Base44: documentación local entities-create.md (FLS/RLS) y skill base44-sdk.
+Stripe: https://docs.stripe.com/events/manage-webhook-endpoints
+Stripe: https://docs.stripe.com/checkout/fulfillment
+
+El detalle de archivos se entrega en RINNO-SEGURIDAD-ARCHIVOS.txt y en el commit de esta rama.

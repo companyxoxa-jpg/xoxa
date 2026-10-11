@@ -1,0 +1,16 @@
+{
+  "name": "TeamInvitation",
+  "type": "object",
+  "properties": {
+    "business_id": { "type": "string" },
+    "email": { "type": "string", "format": "email" },
+    "rinno_role": { "type": "string", "enum": ["business_owner", "business_staff"] },
+    "status": { "type": "string", "enum": ["pending", "accepted", "revoked"], "default": "pending" },
+    "invited_by": { "type": "string" },
+    "invited_at": { "type": "string", "format": "date-time" },
+    "accepted_at": { "type": "string", "format": "date-time" },
+    "revoked_at": { "type": "string", "format": "date-time" }
+  },
+  "required": ["business_id", "email", "rinno_role", "status", "invited_by", "invited_at"],
+  "rls": { "read": false, "create": false, "update": false, "delete": false }
+}

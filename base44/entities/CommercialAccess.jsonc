@@ -1,0 +1,13 @@
+{
+  "name": "CommercialAccess",
+  "type": "object",
+  "properties": {
+    "email": { "type": "string", "format": "email" },
+    "status": { "type": "string", "enum": ["active", "revoked"], "default": "active" },
+    "invited_by": { "type": "string" },
+    "invited_at": { "type": "string", "format": "date-time" },
+    "revoked_at": { "type": "string", "format": "date-time" }
+  },
+  "required": ["email", "status", "invited_by", "invited_at"],
+  "rls": { "read": false, "create": false, "update": false, "delete": false }
+}

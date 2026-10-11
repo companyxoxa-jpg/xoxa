@@ -1,0 +1,98 @@
+{
+  "name": "MemberFee",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Tenant (the Association Business)."
+    },
+    "member_id": {
+      "type": "string",
+      "description": "The Member this fee is charged to."
+    },
+    "membership_id": {
+      "type": "string",
+      "description": "Optional linked Membership."
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "periodic",
+        "extraordinary",
+        "enrollment",
+        "adjustment"
+      ],
+      "default": "periodic",
+      "description": "periodic = recurring quota; extraordinary = one-off charge; enrollment = joining fee; adjustment = corrective fee."
+    },
+    "concept": {
+      "type": "string",
+      "description": "Human-readable description (e.g. Cuota anual 2026)."
+    },
+    "amount": {
+      "type": "integer",
+      "description": "Fee amount in cents. Always > 0."
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date when the fee becomes overdue if unpaid."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "partially_paid",
+        "paid",
+        "overdue",
+        "voided",
+        "refunded"
+      ],
+      "default": "pending",
+      "description": "Derived from amount_paid vs amount and due_date. Recomputed centrally; NOT edited directly."
+    },
+    "amount_paid": {
+      "type": "integer",
+      "default": 0,
+      "description": "Derived/cached sum of completed PaymentAllocations. NOT the source of truth — recomputed from allocations of non-voided payments."
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "voided_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "void_reason": {
+      "type": "string"
+    },
+    "reference": {
+      "type": "string",
+      "description": "Readable per-tenant reference (CUO-YYYY-NNNNNN). Uniqueness enforced server-side (business_id + reference); no DB unique index available."
+    }
+  },
+  "required": [
+    "business_id",
+    "member_id",
+    "type",
+    "concept",
+    "amount",
+    "due_date",
+    "status"
+  ],
+  "rls": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

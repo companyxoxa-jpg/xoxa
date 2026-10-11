@@ -1,0 +1,1 @@
+{"name":"DocumentCounter","type":"object","properties":{"document_type":{"type":"string"},"year":{"type":"integer"},"next_number":{"type":"integer","minimum":1}},"required":["document_type","year","next_number"],"rls":{"read":false,"create":false,"update":false,"delete":false}}

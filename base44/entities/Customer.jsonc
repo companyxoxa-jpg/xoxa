@@ -1,0 +1,94 @@
+{
+  "name": "Customer",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string",
+      "description": "Optional — linked platform user if registered"
+    },
+    "first_name": {
+      "type": "string"
+    },
+    "last_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string",
+      "format": "email"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "whatsapp_phone": {
+      "type": "string"
+    },
+    "total_orders": {
+      "type": "integer",
+      "default": 0
+    },
+    "total_spent": {
+      "type": "integer",
+      "default": 0,
+      "description": "Lifetime spend in cents"
+    },
+    "last_order_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "marketing_consent": {
+      "type": "boolean",
+      "default": false
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "blocked",
+        "archived"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "business_id",
+    "first_name",
+    "phone"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.business_id": "{{user.data.business_id}}"
+        },
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "companyxoxa@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "ax.network.hub@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "xoxamariles@gmail.com"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

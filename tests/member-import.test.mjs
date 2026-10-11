@@ -1,0 +1,10 @@
+import test from'node:test';
+import assert from'node:assert/strict';
+import{prepareMemberImport,MEMBER_IMPORT_HEADERS}from'../base44/shared/member-import.js';
+const existing=[{id:'m1',member_number:'1',first_name:'Ana',last_name:'López',email:'ana@test.es'}];
+const plans=[{id:'p1',code:'annual',name:'Anual'}];
+test('member import prepares new rows without mutating data',()=>{const r=prepareMemberImport([{first_name:'Luis',last_name:'Pérez',email:'luis@test.es',birth_date:'1990-01-01',monthly_limit_grams:'60',plan_code:'annual'}],existing,plans,{minimum_age:18});assert.equal(r.summary.create,1);assert.equal(r.valid[0].data.member_number,'2');assert.equal(r.valid[0].membership.plan_id,'p1')});
+test('member import detects duplicates inside the file and tenant',()=>{const r=prepareMemberImport([{member_number:'1',first_name:'Ana',last_name:'López',email:'ana@test.es'},{member_number:'2',first_name:'B',last_name:'C',email:'same@test.es'},{member_number:'3',first_name:'D',last_name:'E',email:'same@test.es'}],existing,plans);assert.match(r.rows[0].errors.join(),/ya existe/);assert.match(r.rows[2].errors.join(),/repetido/)});
+test('update mode targets the exact existing member',()=>{const r=prepareMemberImport([{member_number:'1',first_name:'Ana María',last_name:'López',email:'ana@test.es'}],existing,plans,{mode:'update_existing'});assert.equal(r.summary.update,1);assert.equal(r.valid[0].existing_id,'m1')});
+test('member import validates age, dates, limits, plans and status',()=>{const r=prepareMemberImport([{first_name:'Menor',last_name:'Prueba',birth_date:'2015-01-01',status:'unknown',monthly_limit_grams:900,plan_code:'missing',start_date:'2026-02-10',end_date:'2026-01-01'}],[],plans,{minimum_age:18});const errors=r.invalid[0].errors.join(' | ');for(const expected of['18 años','Estado','Límite','Plan','anterior'])assert.match(errors,new RegExp(expected,'i'))});
+test('member import is bounded and exposes the supported template',()=>{assert(MEMBER_IMPORT_HEADERS.includes('member_number'));assert.throws(()=>prepareMemberImport(Array.from({length:1001},()=>({first_name:'A',last_name:'B'}))),/1000/)});

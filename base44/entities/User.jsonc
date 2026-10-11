@@ -1,0 +1,45 @@
+{
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "The business (tenant) this user belongs to. Empty for RINNO Super Admin and customers.",
+      "rls": {
+        "write": false
+      }
+    },
+    "rinno_role": {
+      "type": "string",
+      "description": "Granular RINNO role within the business context",
+      "enum": [
+        "business_owner",
+        "business_staff",
+        "customer"
+      ],
+      "rls": {
+        "write": false
+      }
+    },
+    "first_name": {
+      "type": "string",
+      "description": "Customer first name (storefront customers only)"
+    },
+    "last_name": {
+      "type": "string",
+      "description": "Customer last name (storefront customers only)"
+    },
+    "phone": {
+      "type": "string",
+      "description": "Customer phone number (storefront customers only)"
+    },
+    "support_business_id": {
+      "type": "string",
+      "description": "Support context set exclusively by the backend.",
+      "rls": {
+        "write": false
+      }
+    }
+  },
+  "required": [],
+  "name": "User",
+  "type": "object"
+}

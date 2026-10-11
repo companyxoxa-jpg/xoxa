@@ -1,0 +1,50 @@
+{
+  "name": "Plan",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "enum": [
+        "Pilot",
+        "Business",
+        "Pro"
+      ]
+    },
+    "monthly_price": {
+      "type": "integer",
+      "description": "Monthly price in cents"
+    },
+    "setup_price": {
+      "type": "integer",
+      "description": "One-time setup fee in cents"
+    },
+    "features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "max_products": {
+      "type": "integer",
+      "description": "0 = unlimited"
+    },
+    "max_users": {
+      "type": "integer",
+      "description": "0 = unlimited"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "name",
+    "monthly_price"
+  ],
+  "rls": {
+    "read": {},
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

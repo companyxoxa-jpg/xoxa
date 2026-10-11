@@ -1,0 +1,90 @@
+{
+  "name": "OrderItem",
+  "type": "object",
+  "properties": {
+    "order_id": {
+      "type": "string"
+    },
+    "business_id": {
+      "type": "string"
+    },
+    "product_id": {
+      "type": "string"
+    },
+    "product_name_snapshot": {
+      "type": "string",
+      "description": "Frozen product name at order time"
+    },
+    "product_image_snapshot": {
+      "type": "string",
+      "description": "Frozen product image URL at order time"
+    },
+    "quantity": {
+      "type": "number"
+    },
+    "unit_type": {
+      "type": "string",
+      "enum": [
+        "kg",
+        "gram",
+        "unit",
+        "tray",
+        "bunch",
+        "bag",
+        "box"
+      ]
+    },
+    "unit_price": {
+      "type": "integer",
+      "description": "Price per unit at order time in cents"
+    },
+    "subtotal": {
+      "type": "integer",
+      "description": "Line subtotal in cents"
+    }
+  },
+  "required": [
+    "order_id",
+    "business_id",
+    "product_id",
+    "product_name_snapshot",
+    "quantity",
+    "unit_type",
+    "unit_price",
+    "subtotal"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.business_id": "{{user.data.business_id}}"
+        },
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "companyxoxa@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "ax.network.hub@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "xoxamariles@gmail.com"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

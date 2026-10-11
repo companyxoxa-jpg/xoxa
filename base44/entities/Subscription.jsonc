@@ -1,0 +1,197 @@
+{
+  "name": "Subscription",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string"
+    },
+    "plan_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "trial",
+        "trialing",
+        "active",
+        "past_due",
+        "unpaid",
+        "cancel_at_period_end",
+        "cancelled",
+        "pending"
+      ],
+      "default": "pending"
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "renewal_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trial_end": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "billing_cycle_anchor": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "cancel_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "external_subscription_id": {
+      "type": "string",
+      "description": "Provider subscription ID (Stripe etc.)"
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "stripe"
+      ]
+    },
+    "billing_exempt": {
+      "type": "boolean",
+      "default": false,
+      "description": "Admin-controlled courtesy access. Must never be sent to Stripe."
+    },
+    "exemption_reason": {
+      "type": "string",
+      "maxLength": 1000
+    },
+    "exempted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "exempted_by": {
+      "type": "string"
+    },
+    "external_customer_id": {
+      "type": "string"
+    },
+    "checkout_session_id": {
+      "type": "string"
+    },
+    "checkout_url": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "checkout_expires_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "setup_amount": {
+      "type": "integer",
+      "default": 39900
+    },
+    "monthly_amount": {
+      "type": "integer",
+      "default": 2495
+    },
+    "currency": {
+      "type": "string",
+      "default": "EUR"
+    },
+    "first_month_included": {
+      "type": "boolean",
+      "default": true
+    },
+    "vat_included": {
+      "type": "boolean",
+      "default": true
+    },
+    "cancel_at_period_end": {
+      "type": "boolean",
+      "default": false
+    },
+    "ended_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "last_payment_status": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "pending",
+        "succeeded",
+        "failed",
+        "refunded",
+        null
+      ]
+    },
+    "last_payment_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "payment_retry_count": {
+      "type": "integer",
+      "default": 0
+    },
+    "sales_lead_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "attributed_commercial_email": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "email"
+    }
+  },
+  "required": [
+    "business_id",
+    "plan_id",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "user_condition": {
+            "role": "admin",
+            "email": "companyxoxa@gmail.com"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin",
+            "email": "ax.network.hub@gmail.com"
+          }
+        },
+        {
+          "user_condition": {
+            "role": "admin",
+            "email": "xoxamariles@gmail.com"
+          }
+        }
+      ]
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

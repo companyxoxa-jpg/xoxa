@@ -1,0 +1,78 @@
+{
+  "name": "FulfillmentSlot",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string"
+    },
+    "fulfillment_type": {
+      "type": "string",
+      "enum": [
+        "pickup",
+        "own_delivery",
+        "external_delivery"
+      ]
+    },
+    "day_of_week": {
+      "type": "integer",
+      "description": "0=Sunday ... 6=Saturday"
+    },
+    "start_time": {
+      "type": "string",
+      "description": "HH:mm"
+    },
+    "end_time": {
+      "type": "string",
+      "description": "HH:mm"
+    },
+    "max_orders": {
+      "type": "integer",
+      "default": 10
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "business_id",
+    "fulfillment_type",
+    "day_of_week",
+    "start_time",
+    "end_time"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.business_id": "{{user.data.business_id}}"
+        },
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "companyxoxa@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "ax.network.hub@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "xoxamariles@gmail.com"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

@@ -1,0 +1,251 @@
+RINNO - CIERRE DE LA MATRIZ DE SEGURIDAD QA
+Fecha: 11/10/2026 (Europe/Madrid)
+App: RINNO Seguridad QA - 6aca8950491b4b2d74f6f62d
+Produccion 6ab02bee49c85daaead936e9 / rinno.es: sin modificaciones, despliegues, DNS ni uso de datos reales.
+
+RESULTADO
+26/26 casos de la matriz aprobados EN EL ALCANCE INDIVIDUAL DOCUMENTADO.
+42/42 regresiones autenticadas de propietarios A/B repetidas al finalizar.
+258/258 comprobaciones adicionales de lectura cruzada: 43 entidades x get/filter/list x 2 propietarios. Incluye las 41 entidades con business_id, mas Business y User. Hay centinelas existentes de ambos negocios; no se interpreta ausencia de fixtures como denegacion.
+342/342 unitarias, 28/28 navegador LOCAL, lint, tipos y build: exit0.
+Build adicional del sandbox QA: exit0 (aviso no bloqueante de Browserslist desactualizado).
+La evidencia alojada se obtuvo mediante SDK/HTTP reales con sesiones verificadas y mediante las sesiones de propietarios de Chrome y Codex. Las pruebas locales con mocks NO se cuentan como prueba alojada.
+
+CODIGO Y RESPALDOS
+Punto de partida de esta fase: commit 8e9bc85.
+Correcciones de seguridad: commit 3bde0f56a3360366313b9fdf02d38f7585bf4db7, development/security-audit.
+Snapshot QA final: afa33acec76518c036bb239c8e01a8407fb95ea2.
+Checkpoint QA: 6acb62dbdbb64d66f6ac13ed.
+Los cambios QA exclusivos se guardan bajo qa/verified-20261011; no reemplazan la configuracion de produccion del codigo local. El commit de cierre y bundle se entregan junto a este informe.
+
+VULNERABILIDADES Y CORRECCIONES
+AUTH-01 (MEDIA, Bareto): exposicion/escritura de internal_notes mediante permisos generales de socios. Corregido: owner/admin unicamente; proyeccion de respuestas de listado, get, perfil y autoservicio; escritura de notas denegada para manager. Campo directo protegido. Verificacion real: manager no ve notas en list/get/perfil y no puede editarlas; admin asociativo real si puede, con auditoria.
+AUTH-02 (MEDIA, Bareto): audience=board no aplicada. Corregido listado/apertura/publicacion/archivo: owner/admin para board y denegacion de audiencia desconocida. Verificacion real: documento board existente no aparece al manager y devuelve403 al abrir/archivar. Pruebas unitarias adicionales cubren publicacion no autorizada.
+AUTH-03 (MEDIA, Bareto): vincular Member a cualquier User por ID. Corregido: owner/admin, usuario existente/verificado, correo normalizado coincidente y pertenencia no ajena; autoenlace requiere verificacion. Verificacion real: manager403, cliente ajeno403, enlace valido al cliente A verificado funciona. Los negativos de usuario inexistente/no verificado se cubren localmente; no se presentan como pruebas alojadas.
+T20 (CONFIGURACION QA, no vulnerabilidad de aceptacion): faltaba secreto de webhook. Se instalo secreto aleatorio solo QA y se probo control positivo firmado, ausencia, firma invalida, caducada y cuerpo alterado. El diagnostico temporal fue retirado.
+No se encontraron nuevas vulnerabilidades criticas/altas en los casos ejecutados. Esto no certifica ausencia absoluta fuera de la cobertura.
+
+IDENTIDADES Y SESIONES
+Propietarios A/B: sesiones existentes independientes, IDs comprobados de nuevo al terminar.
+Siete identidades nuevas registradas con contrasenas aleatorias distintas, verificadas por OTP recibido en los alias autorizados y autenticadas con SDK oficial: empleados A/B, clientes A/B, comercial A, administrador no autorizado y Super Admin QA.
+Identidad adicional qa-registro-seguridad: verifica que los campos privilegiados enviados al registrar se descartan; auth.me da role=user sin negocio ni soporte.
+Control adicional qa-preverificacion: NO se introdujo OTP. Login devuelve400 exigiendo verificacion y no emite token. Base44 muestra is_verified=true en el registro administrativo incluso antes del OTP; ese campo aislado NO acredita posesion del correo. Se uso verificacion real por correo para las identidades de pruebas.
+Los alias adicionales no son buzones contratados. No se modifico DNS ni se generan costes.
+Setup de roles: asignacion fija de ID/email verificado, app QA y caducidad; sin parametros arbitrarios de autoridad. El endpoint temporal fue cerrado con410 ANTES de las pruebas. No se uso service role para ejecutar las comprobaciones autenticadas. La preparacion administrativa de fixtures no cuenta como prueba de RLS.
+Super Admin QA usa exclusivamente qa-superadmin@rinno.es + role=admin en los helpers QA. AuditLog RLS exige esa misma identidad. Ninguna cuenta privilegiada de produccion se uso como sujeto de prueba.
+Empleado A paso temporalmente por manager y admin de asociacion para probar ambos lados del permiso; quedo restaurado a staff. Los negocios A/B quedaron de nuevo HYBRID. El soporte del Super Admin quedo cerrado.
+
+ALCANCE DE STRIPE
+Los casos T19/T20 son peticiones reales al endpoint alojado con eventos sinteticos firmados HMAC localmente. No son mocks del handler, pero tampoco entregas originadas en Stripe.
+El negocio de control onboarding y su suscripcion pending no se activaron ante checkout unpaid.
+T21 provoco un rechazo del proveedor usando una suscripcion inexistente en el sandbox:500 generico sin secreto. El identificador ficticio se retiro tras la prueba. No se cancelo ninguna suscripcion existente ni se movieron fondos.
+Pendiente para SIGUIENTE FASE: registrar el endpoint real del sandbox Stripe, instalar su signing secret oficial y validar entrega, reintentos/idempotencia, precios y checkout test completo. El secreto actual de verificacion QA no procede de un WebhookEndpoint de Stripe.
+No se ha generado un checkout con redireccion a produccion: CreateBillingCheckout contiene rinno.es como origen de retorno y debera parametrizarse para QA antes de esa prueba.
+
+LIMITES Y RIESGOS RESTANTES
+- T12 comprueba 60 entrypoints con action=list y una reserva anonima con datos validos; no cubre todas las ramas ni combinaciones de parametros de cada handler.
+- T26 es regresion funcional alojada del backend: pedido ficticio impagado, reservar/confirmar/cancelar, contrato borrador sin firma, perfil/asociacion/facturacion y demo nueva. No acredita firma contractual/PDF final, pago completo ni revision visual de todas las pantallas alojadas. La UI completa solo tiene la evidencia local de28 pruebas.
+- Quedan para cobertura ampliada: concurrencia/carga de reservas y contadores, duplicados/reintentos Stripe, limitacion de abuso de endpoints publicos, migracion de datos y auditoria de despliegue antes de publicar.
+- Hay registros de prueba minimos para RLS: validan aislamiento de entidades y no se confunden con fixtures funcionales del producto. Se preservan para reproducir la auditoria; no contienen clientes ni credenciales reales.
+- Credenciales, tokens, codigos OTP y secretos no forman parte de informes ni snapshots. Las transferencias temporales OTP fueron eliminadas. Los clientes autenticados de pruebas se mantienen solo en memoria durante la ejecucion.
+
+ARCHIVOS DE SEGURIDAD MODIFICADOS (commit3bde0f5)
+base44/entities/Member.jsonc
+base44/functions/GetMemberProfile/entry.ts
+base44/functions/ManageAssociationRecords/entry.ts
+base44/functions/ViewAssociationDocument/entry.ts
+base44/shared/associations.js
+base44/shared/member-link.js
+tests/associations-activity.test.mjs
+tests/associations.test.mjs
+tests/member-link.test.mjs
+Documentacion/matriz: qa/NEXT-PHASE.txt, qa/PHASE1-20261011.txt, qa/security-26.csv.
+Cierre: qa/verified-20261011 contiene snapshots exactos QA, fixtures de lectura por ID, programas de prueba sin secretos e instrucciones.
+
+RESULTADOS INDIVIDUALES
+
+T01 | APROBADO
+Accion: Leer entidades privadas del otro negocio mediante list/filter/get
+Actor: Propietarios A/B
+Esperado: Sin registros privados; get no revela existencia
+Obtenido: 258/258: get/filter/list sobre 41 entidades con business_id + Business y User, con centinelas existentes de ambos negocios. Ningun dato ajeno devuelto. No equivale a todas las rutas backend.
+Evidencia: RINNO-QA-LECTURA-43-A.json; RINNO-QA-LECTURA-43-B.json
+
+T02 | APROBADO
+Accion: Modificar un centinela del otro negocio por API directa
+Actor: Propietarios A/B
+Esperado: Denegado; registro intacto
+Obtenido: Piloto final42/42: modificacion ajena directa y backend denegada; escritura propia permitida sin cambiar tenant.
+Evidencia: RINNO-QA-CIERRE-PILOTO-A.json; RINNO-QA-CIERRE-PILOTO-B.json
+
+T03 | APROBADO
+Accion: Eliminar un centinela del otro negocio por API directa
+Actor: Propietarios A/B
+Esperado: Denegado; registro conservado
+Obtenido: Piloto: borrado del centinela Product ajeno rechazado; ambos centinelas siguen accesibles a su propietario.
+Evidencia: RINNO-QA-CIERRE-PILOTO-A.json; RINNO-QA-CIERRE-PILOTO-B.json
+
+T04 | APROBADO
+Accion: updateMe con rinno_role=business_owner
+Actor: Empleado A
+Esperado: Denegado; identidad y permisos sin cambios
+Obtenido: updateMe rinno_role=business_owner devuelve403; auth.me conserva business_staff.
+Evidencia: RINNO-QA-ROLES-REALES.json
+
+T05 | APROBADO
+Accion: updateMe con business_id=B y support_business_id=B
+Actor: Empleado A
+Esperado: Denegado; permanece en A
+Obtenido: business_id y support_business_id ajenos rechazados403; autoridad intacta.
+Evidencia: RINNO-QA-ROLES-REALES.json
+
+T06 | APROBADO
+Accion: Repetir cambios de autoridad mediante campos anidados y null
+Actor: Empleado A
+Esperado: No se modifica ni elimina autoridad
+Obtenido: Campos anidados y null rechazados403; auth.me confirma ID/rol/negocio intactos.
+Evidencia: RINNO-QA-ROLES-REALES.json
+
+T07 | APROBADO
+Accion: Asignarse role=admin o contexto Super Admin
+Actor: Propietarios A/B
+Esperado: Denegado; funciones Super Admin siguen inaccesibles
+Obtenido: role=admin y campos de soporte no alteran autoridad; metricas y vinculacion Super Admin denegadas.
+Evidencia: RINNO-QA-CIERRE-PILOTO-A.json; RINNO-QA-CIERRE-PILOTO-B.json
+
+T08 | APROBADO
+Accion: Invocar funciones exclusivas de Super Admin
+Actor: qa-admin, role=admin fuera de allowlist QA
+Esperado: Denegado pese a role=admin
+Obtenido: ManageBilling, ManageBusiness, ManageCommercial, LinkBusinessUser y ManageSupportMode devuelven403.
+Evidencia: RINNO-QA-ROLES-REALES.json
+
+T09 | APROBADO
+Accion: Crear/actualizar/borrar RoleAssignment por API directa
+Actor: Empleado A; rol asociativo manager durante fixture
+Esperado: Denegado; asignaciones intactas
+Obtenido: Crear RoleAssignment403; actualizar403; borrar registro existente404. Comprobacion posterior mantiene mismo registro/rol.
+Evidencia: RINNO-QA-ROLES-REALES.json; RINNO-QA-ASOCIACIONES-REALES.json
+
+T10 | APROBADO
+Accion: Consultar y modificar información de B
+Actor: Comercial A, CommercialAccess activo
+Esperado: Denegado; solo información autorizada de A accesible
+Obtenido: Lee/edita lead A asignado; B oculto; update/asignacion ajena/configuracion/facturacion B403; lead B intacto.
+Evidencia: RINNO-QA-COMERCIAL-REAL.json
+
+T11 | APROBADO
+Accion: Leer datos internos, roles, auditoría, miembros y facturación
+Actor: Cliente A
+Esperado: Sin exposición interna
+Obtenido: Member, RoleAssignment, AuditLog, Subscription, MemberPayment y Credential existentes no se devuelven; GetMemberProfile403 y contrato403.
+Evidencia: RINNO-QA-ASOCIACION-MATRIZ-REAL.json; RINNO-QA-REGRESION-FUNCIONAL-REAL.json
+
+T12 | APROBADO
+Accion: Invocar todas las funciones sensibles sin sesión
+Actor: Anonimo
+Esperado: Rechazo de autenticación sin efectos
+Obtenido: 60/60 entrypoints privados rechazan action=list sin sesion401/403; reserva publica con fixture valido rechaza401. No es cobertura de todas las ramas de cada funcion.
+Evidencia: RINNO-QA-ANONIMOS-FASE1.json; RINNO-QA-RESERVA-ANONIMA.json
+
+T13 | APROBADO
+Accion: TrackOrder/GuestOrderLookup con objetos operadores, arrays y referencias incorrectas
+Actor: Anonimo
+Esperado: Rechazo; no devuelve datos privados
+Obtenido: 6/6: operadores/arrays400 y referencias inexistentes404, sin datos privados.
+Evidencia: RINNO-QA-PUBLICOS-CIERRE.json
+
+T14 | APROBADO
+Accion: GetStorefront/CreateOrder con slug objeto e IDs de producto cruzados
+Actor: Anonimo
+Esperado: Rechazo; no mezcla datos ni crea pedido cruzado
+Obtenido: 4 slugs invalidos400; carrito con producto existente de B en tienda A400: Producto no encontrado en el catalogo. Order de A seguia vacio antes del posterior pedido legitimo.
+Evidencia: RINNO-QA-CARRITO-CRUZADO.json
+
+T15 | APROBADO
+Accion: Registro con business_id/rinno_role/support_business_id privilegiados
+Actor: Nueva cuenta qa-registro-seguridad, OTP verificado
+Esperado: Campos rechazados o saneados; sin privilegios
+Obtenido: Registro con role/admin, rinno_role, business_id, support_business_id y data anidado termina en role=user sin campos privilegiados segun auth.me200.
+Evidencia: RINNO-QA-REGISTRO-INYECCION-RESULTADO.json
+
+T16 | APROBADO
+Accion: Cambiar o vaciar SavedAddress.business_id después del alta
+Actor: Cliente A
+Esperado: Campo inmutable; alta válida propia sigue funcionando
+Obtenido: Alta propia por ManageSavedAddress funciona; cambiar business_id a B, null o vacio403; registro conserva A.
+Evidencia: RINNO-QA-POSITIVOS-REALES.json
+
+T17 | APROBADO
+Accion: Consultar Subscription de B por API directa y ManageBilling
+Actor: Propietarios A/B
+Esperado: Sin acceso a suscripciones ajenas
+Obtenido: Subscription ajena vacia, ManageBilling ajeno403; resumen propio permitido.
+Evidencia: RINNO-QA-CIERRE-PILOTO-A.json; RINNO-QA-CIERRE-PILOTO-B.json
+
+T18 | APROBADO
+Accion: Consultar Subscription de A por API directa y ManageBilling
+Actor: Empleado A y cliente A
+Esperado: Denegado según política de propietario
+Obtenido: Subscription directa vacia y ManageBilling resumen403 para ambos.
+Evidencia: RINNO-QA-ROLES-REALES.json
+
+T19 | APROBADO
+Accion: checkout.session.completed con pago incompleto
+Actor: Emisor QA HMAC sintetico
+Esperado: No activa negocio ni suscripción
+Obtenido: Endpoint alojado responde200 ignored:true a checkout unpaid firmado. Business onboarding/none y Subscription pending permanecen sin activar. No entrega originada en Stripe.
+Evidencia: RINNO-QA-FASE1-WEBHOOK.json; RINNO-QA-FASE1-UNPAID-STATE.json
+
+T20 | APROBADO
+Accion: Webhook con firma inválida/ausente, cuerpo alterado y timestamp vencido
+Actor: Emisor sin sesion; control HMAC valido
+Esperado: Rechazo por firma; sin cambios
+Obtenido: Control positivo200. Ausente400, invalida401, vencida401 y cuerpo alterado401; secreto QA configurado.
+Evidencia: RINNO-QA-FASE1-WEBHOOK.json
+
+T21 | APROBADO
+Accion: Provocar errores de validación/proveedor controlados
+Actor: Super Admin QA y emisores negativos
+Esperado: Respuesta sin secretos, tokens ni detalles sensibles
+Obtenido: Cancelacion de suscripcion Stripe test inexistente devuelve500 generico El proveedor de pagos rechazo la operacion; sin patrones de secretos. No se cancelo recurso real; ID ficticio retirado despues.
+Evidencia: RINNO-QA-ERROR-PROVEEDOR.json; RINNO-QA-FASE1-WEBHOOK.json
+
+T22 | APROBADO
+Accion: Conceder roles, asignar pagos y ejecutar operaciones sensibles
+Actor: Empleado A con rol staff
+Esperado: Denegado; datos intactos
+Obtenido: Concesion de owner, emision de credencial, cuotas y registro/asignacion de pago denegados403.
+Evidencia: RINNO-QA-POSITIVOS-REALES.json; RINNO-QA-ASOCIACION-MATRIZ-REAL.json; RINNO-QA-ROLES-REALES.json
+
+T23 | APROBADO
+Accion: Operar sobre miembro/pago/credencial de B
+Actor: Empleado A con rol temporal admin de asociacion A
+Esperado: Denegado; datos de B intactos
+Obtenido: Leer/editar Member B, anular pago B y leer/revocar Credential B404; miembro, credencial y cuota pagada B intactos.
+Evidencia: RINNO-QA-ASOCIACION-MATRIZ-REAL.json
+
+T24 | APROBADO
+Accion: Operaciones positivas de su negocio y asociación
+Actor: Administrador asociativo A y propietarios A/B
+Esperado: Permitido; efectos correctos y auditoría atribuible
+Obtenido: Edicion propia de Member y notas permitida; AuditLog atribuido al ID real. Escritura propia de producto y facturacion propia pasan en piloto.
+Evidencia: RINNO-QA-ASOCIACION-MATRIZ-REAL.json; RINNO-QA-CIERRE-PILOTO-A.json
+
+T25 | APROBADO
+Accion: Operación administrativa y consulta de auditoría
+Actor: qa-superadmin, admin y allowlist exclusiva QA
+Esperado: Permitido solo a identidad autorizada; traza correcta
+Obtenido: Entrar/salir de soporte funciona, contexto se limpia; lectura autenticada AuditLog confirma support.entered/exited atribuidos al actor.
+Evidencia: RINNO-QA-POSITIVOS-REALES.json
+
+T26 | APROBADO
+Accion: Regresión positiva de tienda, reserva, contrato, asociación, facturación y demo sintética
+Actor: Super Admin QA, empleado A, clientes A/B y propietarios
+Esperado: Funciones legítimas conservadas sin exposición cruzada
+Obtenido: Backend real: catalogo/pedido ficticio impagado/aislamiento de cliente; reservar-confirmar-cancelar; contrato borrador crear/guardar/leer con denegacion a cliente; perfil asociacion/facturacion; demo nueva y catalogo. Sin firma contractual, cobros ni validacion visual alojada completa.
+Evidencia: RINNO-QA-REGRESION-FUNCIONAL-REAL.json
+
+CONCLUSION
+La matriz QA definida esta ejecutada y aprobada en el alcance expuesto, con regresion42/42 y lectura ampliada258/258. Se puede avanzar a Stripe EN MODO TEST. No equivale a autorizacion ni certificacion para publicar en produccion; siguen pendientes las validaciones de integracion y cobertura ampliada arriba enumeradas.
+No queda bloqueo de acceso al correo ni de las siete identidades. No se necesita enviar contrasenas o codigos por chat.

@@ -1,0 +1,82 @@
+{
+  "name": "MemberPayment",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Tenant."
+    },
+    "member_id": {
+      "type": "string",
+      "description": "The Member this payment belongs to."
+    },
+    "amount": {
+      "type": "integer",
+      "description": "Payment amount in cents. Always > 0. Immutable once completed."
+    },
+    "method": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "transfer",
+        "card",
+        "other"
+      ]
+    },
+    "method_reference": {
+      "type": "string",
+      "description": "Optional reference (transfer ref, card receipt, etc.)."
+    },
+    "paid_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the payment was made (may be backdated by staff). Immutable once completed."
+    },
+    "registered_by": {
+      "type": "string",
+      "description": "User ID of the staff member who registered the payment. ALWAYS from the authenticated user, never from the request body."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "completed",
+        "voided"
+      ],
+      "default": "completed",
+      "description": "A completed payment is an immutable financial record. Corrections only via void/reversal, never via silent edit."
+    },
+    "notes": {
+      "type": "string"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Client-supplied key to prevent duplicate payment registration on retry. Uniqueness (business_id + key) enforced server-side via pre-check inside the per-tenant mutation lock."
+    },
+    "voided_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "void_reason": {
+      "type": "string"
+    },
+    "voided_by": {
+      "type": "string",
+      "description": "User ID who voided the payment. Always from authenticated user."
+    }
+  },
+  "required": [
+    "business_id",
+    "member_id",
+    "amount",
+    "method",
+    "paid_at",
+    "registered_by",
+    "status"
+  ],
+  "rls": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

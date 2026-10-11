@@ -1,0 +1,61 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { manageActivity, manageEnrollment, enrollSelf, cancelOwnEnrollment, ValidationError, ConflictError, NotFoundError, AuthorizationError } from '../base44/shared/associations-activity.js';
+import { manageMember, manageMembershipPlan, manageMembership, manageRoleAssignment, linkMemberUser } from '../base44/shared/associations.js';
+
+function fixture() {
+  const db = { Business:[{id:'A',mutation_token:''},{id:'B',mutation_token:''}], User:[], Member:[], RoleAssignment:[], MembershipPlan:[], Membership:[], Activity:[], Enrollment:[], AuditLog:[] };
+  const ids={};
+  const entities=Object.fromEntries(Object.keys(db).map(name=>[name,{
+    filter:async q=>db[name].filter(r=>Object.entries(q).every(([k,v])=>k==='$or'?v.some(x=>Object.entries(x).every(([a,b])=>r[a]===b)):r[k]===v)).map(r=>structuredClone(r)),
+    get:async id=>{const r=db[name].find(x=>x.id===id);return r&&structuredClone(r)},
+    create:async d=>{const r={...structuredClone(d),id:`${name}-${ids[name]=(ids[name]||0)+1}`};db[name].push(r);return structuredClone(r)},
+    update:async(id,d)=>{const r=db[name].find(x=>x.id===id);if(!r)throw Error('not found');Object.assign(r,structuredClone(d));return structuredClone(r)},
+    delete:async id=>{const i=db[name].findIndex(x=>x.id===id);if(i>=0)db[name].splice(i,1)},
+    updateMany:async(q,u)=>{let updated=0;for(const r of db[name])if(Object.entries(q).every(([k,v])=>k==='$or'?v.some(x=>Object.entries(x).every(([a,b])=>r[a]===b)):r[k]===v)){Object.assign(r,u.$set||{});updated++}return{updated}}
+  }]));
+  return {db,client:{asServiceRole:{entities}}};
+}
+const owner=(b='A')=>({id:`owner${b}`,role:'user',data:{business_id:b,rinno_role:'business_owner'}});
+const user=(id,b='A')=>({id,role:'user',data:{business_id:b}});
+async function member(f,id='u1',active=true){f.db.User.push({id,email:id+'@test.invalid',is_verified:true,business_id:'A'});let m=(await manageMember(f.client,owner(),{action:'create',member_data:{first_name:id,last_name:'Test',email:id+'@test.invalid'}})).member;m=(await linkMemberUser(f.client,owner(),{action:'link',member_id:m.id,user_id:id})).member;if(!active)m=(await manageMember(f.client,owner(),{action:'set_status',member_id:m.id,status:'suspended'})).member;return m}
+async function membership(f,m,status='active',end_date=null){let p=f.db.MembershipPlan[0];if(!p)p=(await manageMembershipPlan(f.client,owner(),{action:'create',plan_data:{name:'Plan',code:'plan',fee_amount:100,fee_period:'annual'}})).plan;return (await manageMembership(f.client,owner(),{action:'create',member_id:m.id,plan_id:p.id,start_date:'2026-01-01',end_date,status})).membership}
+async function fullMember(f,id='u1'){const m=await member(f,id);await membership(f,m);return m}
+async function activity(f,extra={}){const a=(await manageActivity(f.client,owner(),{action:'create',activity_data:{title:'Taller',start_at:'2030-01-01T10:00:00Z',capacity:2,enrollment_open:true,...extra}})).activity;return (await manageActivity(f.client,owner(),{action:'publish',activity_id:a.id})).activity}
+async function enroll(f,a,m){return (await manageEnrollment(f.client,owner(),{action:'enroll',activity_id:a.id,member_id:m.id})).enrollment}
+
+test('01 create draft and audit',async()=>{const f=fixture();const r=await manageActivity(f.client,owner(),{action:'create',activity_data:{title:'A',start_at:'2030-01-01'}});assert.equal(r.activity.status,'draft');assert.equal(f.db.AuditLog[0].action,'activity.created')});
+test('02 validates required title',async()=>{const f=fixture();await assert.rejects(manageActivity(f.client,owner(),{action:'create',activity_data:{start_at:'2030-01-01'}}),ValidationError)});
+test('03 validates dates',async()=>{const f=fixture();await assert.rejects(manageActivity(f.client,owner(),{action:'create',activity_data:{title:'A',start_at:'bad'}}),ValidationError)});
+test('04 validates end after start',async()=>{const f=fixture();await assert.rejects(manageActivity(f.client,owner(),{action:'create',activity_data:{title:'A',start_at:'2030-01-02',end_at:'2030-01-01'}}),ValidationError)});
+test('05 validates positive capacity',async()=>{const f=fixture();await assert.rejects(manageActivity(f.client,owner(),{action:'create',activity_data:{title:'A',start_at:'2030-01-01',capacity:0}}),ValidationError)});
+test('06 validates paid price cents',async()=>{const f=fixture();await assert.rejects(manageActivity(f.client,owner(),{action:'create',activity_data:{title:'A',start_at:'2030-01-01',is_paid:true,price:1.2}}),ValidationError)});
+test('07 update sanitizes fields',async()=>{const f=fixture();const a=await activity(f);const r=await manageActivity(f.client,owner(),{action:'update',activity_id:a.id,activity_data:{title:'Nuevo',business_id:'B'}});assert.equal(r.activity.title,'Nuevo');assert.equal(r.activity.business_id,'A')});
+test('08 publish only draft',async()=>{const f=fixture();const a=await activity(f);await assert.rejects(manageActivity(f.client,owner(),{action:'publish',activity_id:a.id}),ConflictError)});
+test('09 cancel closes enrollment',async()=>{const f=fixture();const a=await activity(f);const r=await manageActivity(f.client,owner(),{action:'cancel',activity_id:a.id});assert.equal(r.activity.enrollment_open,false)});
+test('10 complete published',async()=>{const f=fixture();const a=await activity(f);const r=await manageActivity(f.client,owner(),{action:'complete',activity_id:a.id});assert.equal(r.activity.status,'completed')});
+test('11 tenant isolation activities',async()=>{const f=fixture();const a=await activity(f);await assert.rejects(manageActivity(f.client,owner('B'),{action:'get',activity_id:a.id}),NotFoundError)});
+test('12 valid member confirms',async()=>{const f=fixture(),m=await fullMember(f),a=await activity(f);assert.equal((await enroll(f,a,m)).status,'confirmed')});
+test('13 full capacity waitlists',async()=>{const f=fixture(),a=await activity(f,{capacity:1}),m1=await fullMember(f,'u1'),m2=await fullMember(f,'u2');await enroll(f,a,m1);assert.equal((await enroll(f,a,m2)).status,'waitlisted')});
+test('14 unlimited capacity confirms all',async()=>{const f=fixture(),a=await activity(f,{capacity:null}),m1=await fullMember(f,'u1'),m2=await fullMember(f,'u2');await enroll(f,a,m1);assert.equal((await enroll(f,a,m2)).status,'confirmed')});
+test('15 duplicate effective enrollment blocked',async()=>{const f=fixture(),a=await activity(f),m=await fullMember(f);await enroll(f,a,m);await assert.rejects(enroll(f,a,m),ConflictError)});
+test('16 inactive member rejected',async()=>{const f=fixture(),a=await activity(f),m=await member(f,'u',false);await membership(f,m);await assert.rejects(enroll(f,a,m),ConflictError)});
+test('17 member without membership rejected',async()=>{const f=fixture(),a=await activity(f),m=await member(f);await assert.rejects(enroll(f,a,m),ConflictError)});
+test('18 expired membership rejected',async()=>{const f=fixture(),a=await activity(f),m=await member(f);await membership(f,m,'active','2020-01-01');await assert.rejects(enroll(f,a,m),ConflictError)});
+test('19 closed activity rejected',async()=>{const f=fixture(),a=await activity(f,{enrollment_open:false}),m=await fullMember(f);await assert.rejects(enroll(f,a,m),ConflictError)});
+test('20 deadline rejected',async()=>{const f=fixture(),a=await activity(f,{enrollment_until:'2020-01-01'}),m=await fullMember(f);await assert.rejects(enroll(f,a,m),ConflictError)});
+test('21 cancel confirmed promotes FIFO',async()=>{const f=fixture(),a=await activity(f,{capacity:1}),m1=await fullMember(f,'u1'),m2=await fullMember(f,'u2'),m3=await fullMember(f,'u3');const e1=await enroll(f,a,m1),e2=await enroll(f,a,m2);await new Promise(r=>setTimeout(r,2));await enroll(f,a,m3);const r=await manageEnrollment(f.client,owner(),{action:'cancel',enrollment_id:e1.id});assert.equal(r.promoted.id,e2.id)});
+test('22 cancelling waitlisted does not promote',async()=>{const f=fixture(),a=await activity(f,{capacity:1}),m1=await fullMember(f,'u1'),m2=await fullMember(f,'u2');await enroll(f,a,m1);const e2=await enroll(f,a,m2);const r=await manageEnrollment(f.client,owner(),{action:'cancel',enrollment_id:e2.id});assert.equal(r.promoted,null)});
+test('23 skips stale ineligible waitlist',async()=>{const f=fixture(),a=await activity(f,{capacity:1}),m1=await fullMember(f,'u1'),m2=await fullMember(f,'u2'),m3=await fullMember(f,'u3');const e1=await enroll(f,a,m1),e2=await enroll(f,a,m2),e3=await enroll(f,a,m3);await manageMember(f.client,owner(),{action:'set_status',member_id:m2.id,status:'suspended'});const r=await manageEnrollment(f.client,owner(),{action:'cancel',enrollment_id:e1.id});assert.equal(r.promoted.id,e3.id);assert.equal(f.db.Enrollment.find(x=>x.id===e2.id).cancellation_reason,'waitlist_ineligible')});
+test('24 self enrollment derives member',async()=>{const f=fixture(),a=await activity(f),m=await fullMember(f,'me');const r=await enrollSelf(f.client,user('me'),{activity_id:a.id,member_id:'forged'});assert.equal(r.enrollment.member_id,m.id)});
+test('25 self enrollment requires unique link',async()=>{const f=fixture(),a=await activity(f);await assert.rejects(enrollSelf(f.client,user('none'),{activity_id:a.id}),AuthorizationError)});
+test('26 own cancel cannot cancel another member',async()=>{const f=fixture(),a=await activity(f),m1=await fullMember(f,'u1'),m2=await fullMember(f,'u2');const e=await enroll(f,a,m1);await assert.rejects(cancelOwnEnrollment(f.client,user('u2'),{enrollment_id:e.id}),NotFoundError)});
+test('27 own cancel promotes waitlist',async()=>{const f=fixture(),a=await activity(f,{capacity:1}),m1=await fullMember(f,'u1'),m2=await fullMember(f,'u2');const e1=await enroll(f,a,m1);const e2=await enroll(f,a,m2);const r=await cancelOwnEnrollment(f.client,user('u1'),{enrollment_id:e1.id});assert.equal(r.promoted.id,e2.id)});
+test('28 effective full is derived',async()=>{const f=fixture(),a=await activity(f,{capacity:1}),m=await fullMember(f);await enroll(f,a,m);const r=await manageActivity(f.client,owner(),{action:'get',activity_id:a.id});assert.equal(r.activity.effective_status,'full');assert.equal(r.activity.status,'published');assert.equal(r.activity.available_places,0)});
+test('29 staff permissions',async()=>{const f=fixture(),a=await activity(f),m=await fullMember(f);await manageRoleAssignment(f.client,owner(),{action:'set',user_id:'staff',role:'staff'});assert.equal((await manageEnrollment(f.client,user('staff'),{action:'enroll',activity_id:a.id,member_id:m.id})).enrollment.status,'confirmed');await assert.rejects(manageActivity(f.client,user('staff'),{action:'cancel',activity_id:a.id}),AuthorizationError)});
+test('30 concurrent attempts never exceed capacity',async()=>{const f=fixture(),a=await activity(f,{capacity:1}),members=[];for(const id of ['u1','u2','u3'])members.push(await fullMember(f,id));await Promise.allSettled(members.map(m=>enroll(f,a,m)));assert.ok(f.db.Enrollment.filter(e=>e.activity_id===a.id&&e.status==='confirmed').length<=1)});
+test('31 attendance transition is controlled',async()=>{const f=fixture(),a=await activity(f,{check_in_enabled:true}),m=await fullMember(f),e=await enroll(f,a,m);const r=await manageEnrollment(f.client,owner(),{action:'set_status',enrollment_id:e.id,status:'attended'});assert.equal(r.enrollment.status,'attended');assert.ok(r.enrollment.check_in_at)});
+test('32 attendance requires check-in to be enabled',async()=>{const f=fixture(),a=await activity(f),m=await fullMember(f),e=await enroll(f,a,m);await assert.rejects(()=>manageEnrollment(f.client,owner(),{action:'set_status',enrollment_id:e.id,status:'attended'}),ConflictError)});
+test('32 tenant isolation enrollments',async()=>{const f=fixture(),a=await activity(f),m=await fullMember(f),e=await enroll(f,a,m);await assert.rejects(manageEnrollment(f.client,owner('B'),{action:'cancel',enrollment_id:e.id}),NotFoundError)});
+test('33 paid activity enrollment creates no fee',async()=>{const f=fixture(),a=await activity(f,{is_paid:true,price:1500}),m=await fullMember(f);await enroll(f,a,m);assert.equal('MemberFee' in f.db,false)});
+test('34 A4 does not touch credentials',async()=>{const f=fixture(),a=await activity(f),m=await fullMember(f);await enroll(f,a,m);assert.equal('Credential' in f.db,false)});

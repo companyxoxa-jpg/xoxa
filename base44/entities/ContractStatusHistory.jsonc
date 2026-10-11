@@ -1,0 +1,15 @@
+{
+  "name": "ContractStatusHistory",
+  "type": "object",
+  "properties": {
+    "contract_id": { "type": "string" },
+    "from_status": { "type": ["string", "null"] },
+    "to_status": { "type": "string" },
+    "changed_by": { "type": "string" },
+    "changed_by_email": { "type": "string", "format": "email" },
+    "changed_at": { "type": "string", "format": "date-time" },
+    "reason": { "type": ["string", "null"], "maxLength": 500 }
+  },
+  "required": ["contract_id", "to_status", "changed_by", "changed_by_email", "changed_at"],
+  "rls": { "read": false, "create": false, "update": false, "delete": false }
+}

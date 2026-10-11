@@ -1,0 +1,50 @@
+{
+  "name": "AuditLog",
+  "type": "object",
+  "properties": {
+    "actor_user_id": {
+      "type": "string"
+    },
+    "actor_role": {
+      "type": "string"
+    },
+    "business_id": {
+      "type": "string",
+      "description": "Optional \u2014 the tenant affected by the action"
+    },
+    "action": {
+      "type": "string",
+      "description": "e.g. business.created, business.suspended, role.changed, support.access"
+    },
+    "entity_type": {
+      "type": "string"
+    },
+    "entity_id": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional context as key-value pairs",
+      "additionalProperties": true
+    },
+    "ip_address": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "actor_user_id",
+    "actor_role",
+    "action"
+  ],
+  "rls": {
+    "read": {
+      "user_condition": {
+        "role": "admin",
+        "email": "qa-superadmin@rinno.es"
+      }
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

@@ -1,0 +1,55 @@
+{
+  "auth": "none",
+  "login_path": null,
+  "consent_path": null,
+  "tools": {
+    "excluded_agents": [],
+    "entity_overrides": {
+      "Appointment": {
+        "operations": [],
+        "description": null
+      },
+      "AuditLog": {
+        "operations": [],
+        "description": null
+      },
+      "Business": {
+        "operations": [],
+        "description": null
+      },
+      "BusinessSettings": {
+        "operations": [],
+        "description": null
+      },
+      "Customer": {
+        "operations": [],
+        "description": null
+      },
+      "CustomerAddress": {
+        "operations": [],
+        "description": null
+      },
+      "FulfillmentSlot": {
+        "operations": [],
+        "description": null
+      },
+      "Order": {
+        "operations": [],
+        "description": null
+      },
+      "OrderItem": {
+        "operations": [],
+        "description": null
+      },
+      "SavedAddress": {
+        "operations": [],
+        "description": null
+      },
+      "Subscription": {
+        "operations": [],
+        "description": null
+      }
+    },
+    "functions": []
+  }
+}

@@ -1,0 +1,27 @@
+(async()=>{const c=n=>globalThis.qaHarness.get(n).client,S=c('qa-superadmin'),E=c('qa-empleado-a');const A='6aca8bffd29ed0095f3ea682',B='6aca8bffd29ed0095f3ea683';const checks=[];const invoke=async(x,f,b)=>(await x.functions.invoke(f,b)).data;const put=(id,action,ok,obtained)=>checks.push({id,action,status:ok?'APROBADO':'FALLIDO',obtained});
+const denied=async(id,action,fn)=>{try{await fn();put(id,action,false,'Unexpected success');}catch(e){put(id,action,[403,404].includes(e.status),{http:e.status,error:e.data?.error||e.message});}};
+try{
+const customerAId=(await c('qa-cliente-a').auth.me()).id,customerBId=(await c('qa-cliente-b').auth.me()).id;await invoke(S,'ManageSupportMode',{action:'enter',business_id:A});
+const ma=(await invoke(S,'ManageMember',{action:'create',member_data:{first_name:'Socio',last_name:'Ficticio A',email:'qa-cliente-a@rinno.es',internal_notes:'QA PRIVATE NOTE A'}})).member;
+const da=(await invoke(S,'ManageAssociationRecords',{action:'publish_document',document:{title:'QA Board A',protected_content:'QA PRIVATE BOARD A',audience:'board'}})).document;
+const ra=(await invoke(S,'ManageRoleAssignment',{action:'set',user_id:(await E.auth.me()).id,role:'manager'})).assignment;
+globalThis.qaAssociationFixture={ma,da,ra};
+for(const action of ['list','get']){const r=await invoke(E,'ManageMember',{action,member_id:ma.id});const rows=r.members||[r.member];put('AUTH-01','Manager '+action+' no internal notes',rows.some(x=>x.id===ma.id)&&rows.every(x=>!Object.hasOwn(x,'internal_notes')),{ids:rows.map(x=>x.id),notesPresent:rows.some(x=>Object.hasOwn(x,'internal_notes'))});}
+const profile=await invoke(E,'GetMemberProfile',{member_id:ma.id});put('AUTH-01','Manager profile no internal notes',!Object.hasOwn(profile.member,'internal_notes'),{id:profile.member.id});
+await denied('AUTH-01','Manager cannot write internal notes',()=>invoke(E,'ManageMember',{action:'update',member_id:ma.id,member_data:{internal_notes:'ILLEGAL CHANGE'}}));
+const docs=await invoke(E,'ManageAssociationRecords',{action:'list'});put('AUTH-02','Board document absent from manager list',!docs.documents.some(x=>x.id===da.id),{returnedIds:docs.documents.map(x=>x.id)});
+await denied('AUTH-02','Manager cannot open board document',()=>invoke(E,'ViewAssociationDocument',{document_id:da.id}));
+await denied('AUTH-02','Manager cannot archive board document',()=>invoke(E,'ManageAssociationRecords',{action:'archive_document',document_id:da.id}));
+await denied('AUTH-03','Manager cannot link users',()=>invoke(E,'LinkMemberUser',{action:'link',member_id:ma.id,user_id:customerAId}));
+await denied('AUTH-03','Owner cannot link foreign customer',()=>invoke(S,'LinkMemberUser',{action:'link',member_id:ma.id,user_id:customerBId}));
+const linked=await invoke(S,'LinkMemberUser',{action:'link',member_id:ma.id,user_id:(await c('qa-cliente-a').auth.me()).id});put('AUTH-03','Owner can link verified matching email',linked.member.user_id===(await c('qa-cliente-a').auth.me()).id,{member_id:ma.id,user_id:linked.member.user_id});
+for(const [op,data] of [['update',{role:'owner'}],['delete',undefined]])await denied('T09','Employee cannot '+op+' real RoleAssignment',()=>op==='update'?E.entities.RoleAssignment.update(ra.id,data):E.entities.RoleAssignment.delete(ra.id));
+const unchanged=(await invoke(S,'ManageRoleAssignment',{action:'list'})).assignments.find(x=>x.id===ra.id);put('T09','Role assignment unchanged',unchanged?.role==='manager',{id:unchanged?.id,role:unchanged?.role});
+await invoke(S,'ManageSupportMode',{action:'enter',business_id:B});const mb=(await invoke(S,'ManageMember',{action:'create',member_data:{first_name:'Socio',last_name:'Ficticio B',email:'qa-cliente-b@rinno.es',internal_notes:'QA PRIVATE NOTE B'}})).member;globalThis.qaAssociationFixture.mb=mb;
+await invoke(S,'ManageSupportMode',{action:'enter',business_id:A});
+await denied('T23','Association A cannot read member B',()=>invoke(S,'ManageMember',{action:'get',member_id:mb.id}));
+await denied('T23','Association A cannot edit member B',()=>invoke(S,'ManageMember',{action:'update',member_id:mb.id,member_data:{first_name:'ILLEGAL'}}));
+await invoke(S,'ManageRoleAssignment',{action:'set',user_id:(await E.auth.me()).id,role:'staff'});
+}catch(e){checks.push({id:'FIXTURE',status:'NO VERIFICADO',http:e.status,error:e.data?.error||e.message});}finally{try{await invoke(S,'ManageSupportMode',{action:'exit'});}catch{}}
+return{app:'6aca8950491b4b2d74f6f62d',at:new Date().toISOString(),method:'Real QA sessions; Super Admin uses legitimate support mode for positive setup and member operations. Manager negatives use independent employee session.',checks};})()
+

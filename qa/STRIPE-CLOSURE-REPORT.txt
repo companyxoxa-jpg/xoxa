@@ -1,0 +1,39 @@
+RINNO - INTENTO DE CIERRE STRIPE QA - 11 octubre 2026
+
+ESTADO: FASE ABIERTA. 26/30 aprobados y 4 NO VERIFICADOS. No equivalen a las 26 pruebas de seguridad de Fase 1. Los casos conservan el alcance REAL/LOCAL/PARCIAL individual; se heredan evidencias reales de la ejecucion anterior cuando no se indica repeticion.
+
+Base: f8f98debc8e2349076cf977cb2f46f88c21040d5; rama development/security-audit. Solo QA 6aca8950491b4b2d74f6f62d y Stripe Test acct_1UPKv9RVi3kAwivj. No cambios en produccion, DNS, claves reales, datos de clientes ni servicios de pago. Checkpoint QA 6acb894a0dc0dc33dabd8719, commit remoto 70e73fca3881a3f20765c7d9af3c670930639ae4.
+
+CAUSA Y CORRECCION IVA
+Los precios inclusive no tenian TaxRate aplicado. Se agrego STRIPE_INCLUSIVE_TAX_RATE_ID y validacion de tipo activo, inclusivo, porcentaje numerico y modo test. createStripeCheckout aplica tax_rates a line_items y createStripeSubscriptionFromCheckout aplica default_tax_rates a la suscripcion. Solo QA tiene configurado txr_1UPMHyRVi3kAwivj0EYkWRwY (21% inclusivo). No se activo Stripe Tax automatico. Es un escenario ficticio de referencia; su aplicabilidad fiscal comercial requiere confirmacion y no cubre exenciones ni otras jurisdicciones.
+
+FACTURAS STRIPE TEST PAGADAS
+Alta: in_1UPMJnRVi3kAwivjUWgOCiU8, base 329.75 EUR, IVA 21% 69.25 EUR, total 399.00 EUR.
+Standard: in_1UPMJrRVi3kAwivjof7KHEX8, base 20.62, IVA 4.33, total 24.95 EUR.
+Premium: in_1UPMJvRVi3kAwivjyGzWOCuL, base 33.05, IVA 6.94, total 39.99 EUR.
+Ademas se ejecuto el codigo corregido con la API real, se pago el checkout en el navegador con tarjeta de prueba y se genero in_1UPMM4RVi3kAwivjY8nXqEYl: 329.75+69.25=399.00 EUR. PDF adjunto. El webhook creo sub_1UPMM9RVi3kAwivjRLCtcyG0 trialing con default_tax_rates 21%. Esto verifica checkout/proveedor/webhook, no el endpoint de alta bajo sesion de Super Admin.
+Los primeros tres intentos directos de factura quedaron a cero por divisa por defecto USD y rechazo de lineas EUR: no se contaron como aprobados. La repeticion define EUR explicitamente y valida cada respuesta antes de pagar. No se alteraron las facturas historicas sin IVA.
+
+SEPA RECHAZADO
+Checkout cs_test_a1XIni4ajYICvghEFJJt08Pa3poeL763qZNiPBLDjYGla186MG2ZfvCiEf usando IBAN oficial de prueba. PaymentIntent pi_3UPMNNRVi3kAwivj1kY7pg55 paso a requires_payment_method, checkout unpaid. Negocio ficticio 6acb8862ac26c28910e868bb permanece onboarding/none. Evento evt_1UPMNeRVi3kAwivjMahHT6NW async_payment_failed: Workbench muestra entrega 200 OK a BillingWebhook QA, tambien reenvio manual 200. El contador general pending_webhooks no se usa como prueba de fallo del endpoint QA.
+
+CAMBIO DE PLAN PREPARADO
+ManageBilling action change_plan sigue despues de la comprobacion Super Admin; propietario recibe 403 en prueba local. Valida Price ID configurado, EUR, mensual, importe exacto y modo test; rechaza suscripciones canceladas, impagadas, con cancelacion programada o multiples items/cantidad distinta de uno. No cambia trial_end ni activa localmente; deja confirmar al webhook. Proveedor usa create_prorations y pending_if_incomplete. Ejecucion del codigo contra Stripe Test: Premium 3999; QA termino premium/3999/trialing por evento evt_1UPMQ8RVi3kAwivjIA5AMs6N processed. El endpoint autenticado y la interfaz completa siguen NO VERIFICADOS.
+
+REGRESIONES
+361/361 unitarias locales; 28/28 navegador local; lint, tipos y build correctos. 42/42 propietarios en sesiones reales se repiten despues de los cambios. No se modificaron RLS, esquemas, rinno.ts ni business-mutation.js respecto a f8f98de. La evidencia historica 26/26 de seguridad se conserva: NO se afirma repeticion completa de los 26 con todos los roles en este turno. Faltan sesiones de los otros roles para una repeticion integral.
+
+CUATRO CASOS ABIERTOS
+14: correspondencia comercial de mes natural gratuito. Codigo: alta 11/10 -> fin 11/11 y prorrateo hasta 01/12. Hace falta confirmar que es la regla deseada; una prueba no puede decidir el contrato.
+23: cambio de plan desde RINNO con Super Admin real. Backend y proveedor preparados/probados; falta sesion autorizada para la llamada positiva y recorrido de interfaz.
+25: caida/resultado incierto y reconciliacion alojada completa. Gate cierra en seguro; pruebas locales pasan. ManageMutationLock requiere Super Admin real, token esperado, motivo y bloqueo de al menos 15 minutos. No se ha eludido mediante service role ni se ha simulado como prueba autenticada.
+26: recorrido autenticado Super Admin de alta/gestion. El navegador disponible sigue mostrando propietario B, no Super Admin.
+
+INTERVENCION HUMANA
+Jonathan debe iniciar sesion como qa-superadmin@rinno.es en https://preview-sandbox--6aca8950491b4b2d74f6f62d.base44.app/login?returnTo=%2F. No se dispone de su credencial/sesion actual; no se puede suplantar con privilegios del conector. Si requiere recuperacion, introducir la nueva credencial y los codigos solo en la pantalla oficial. Confirmar tambien escenario fiscal 21% y calendario comercial. Para repetir integralmente los 26 roles se precisaran sus sesiones QA autorizadas; las evidencias anteriores no caducan por sustituirlas con mocks.
+
+ARCHIVOS MODIFICADOS
+base44/shared/stripe-billing.ts; base44/functions/ManageBilling/entry.ts; tests/stripe-security.test.mjs; tests/stripe-tax.test.mjs; tests/stripe-plan-change.test.mjs; qa/STRIPE-CLOSURE-MATRIX.csv; qa/STRIPE-CLOSURE-REPORT.txt.
+
+Documentacion oficial: https://docs.stripe.com/api/tax_rates/create ; https://docs.stripe.com/api/checkout/sessions/create ; https://docs.stripe.com/testing .
+Conclusion: correccion fiscal verificada en el escenario QA 21%; fase NO CERRADA. No publicar.

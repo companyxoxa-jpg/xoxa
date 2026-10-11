@@ -1,0 +1,18 @@
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { base44 } from "@/api/base44Client";
+import { useAuth } from "@/lib/AuthContext";
+import { getBusinessId } from "@/lib/rinno";
+import { formatCurrency } from "@/lib/format";
+import { Beef, ClipboardList, Package, Scale, ArrowUpRight } from "lucide-react";
+
+export default function ButcherHome({ business }) {
+  const {user}=useAuth(),bid=getBusinessId(user); const [orders,setOrders]=useState([]),[products,setProducts]=useState([]),[loading,setLoading]=useState(true);
+  useEffect(()=>{let active=true;Promise.all([base44.entities.Order.filter({business_id:bid},"-created_date",80),base44.entities.Product.filter({business_id:bid},"sort_order",200)]).then(([o,p])=>{if(active){setOrders(o);setProducts(p)}}).finally(()=>active&&setLoading(false));return()=>{active=false}},[bid]);
+  const queue=orders.filter(o=>["pending","accepted","preparing","ready"].includes(o.order_status)); const kg=products.filter(p=>p.unit_type==="kg").length;
+  return <div className="butcherops-home min-h-full bg-[#f5efe6] text-[#281416] px-4 md:px-8 py-6"><header className="border-y-4 border-[#7d252b] py-5 flex items-end justify-between gap-4"><div><p className="text-[10px] font-black tracking-[.25em] text-[#7d252b]">PARTE DEL MOSTRADOR</p><h1 className="font-editorial text-4xl sm:text-6xl leading-none mt-2">{business.business_name}</h1></div><Beef className="w-12 h-12 text-[#7d252b]"/></header>
+    <section className="grid sm:grid-cols-3 border-b border-[#7d252b]/30"><Stamp icon={ClipboardList} value={queue.length} label="encargos en curso"/><Stamp icon={Scale} value={kg} label="referencias al peso"/><Stamp icon={Package} value={products.filter(p=>p.is_available).length} label="cortes disponibles"/></section>
+    <div className="grid lg:grid-cols-[1fr_300px] gap-8 pt-8"><section><div className="flex justify-between items-center mb-4"><h2 className="font-editorial text-3xl">Órdenes de corte</h2><Link to="/orders" className="text-xs font-bold uppercase tracking-wider text-[#7d252b]">Libro completo</Link></div>{loading?<p>Cargando…</p>:queue.length?<div className="border-t-2 border-[#281416]">{queue.slice(0,8).map((o,i)=><Link key={o.id} to={`/orders/${o.id}`} className="grid grid-cols-[40px_1fr_auto] items-center gap-3 py-4 border-b border-[#281416]/25"><span className="font-mono text-xs">{String(i+1).padStart(2,"0")}</span><span><b className="block">{o.customer_name||"Encargo"}</b><small className="opacity-60">{o.order_number||o.id?.slice(-6)} · {o.order_status}</small></span><strong>{formatCurrency(o.total)}</strong></Link>)}</div>:<div className="border-y-2 border-[#281416] py-12 text-center"><p className="font-editorial text-2xl">Mostrador al día</p><span className="text-sm opacity-60">No quedan encargos por preparar.</span></div>}</section><aside className="bg-[#7d252b] text-[#f8e8d2] p-6 h-fit"><p className="text-[10px] font-bold tracking-[.2em]">ACCESOS DEL OFICIO</p>{[["/catalog","Cortes y precios"],["/orders","Preparación"],["/customers","Clientes"],["/settings","Datos del local"]].map(([to,label])=><Link key={to} to={to} className="flex items-center justify-between border-b border-white/20 py-4 font-editorial text-lg">{label}<ArrowUpRight className="w-4 h-4"/></Link>)}</aside></div>
+  </div>;
+}
+function Stamp({icon:Icon,value,label}){return <div className="py-5 sm:px-5 sm:border-r last:border-0 border-[#7d252b]/30"><Icon className="w-4 h-4 text-[#7d252b]"/><b className="block font-editorial text-3xl mt-2">{value}</b><span className="text-xs opacity-60">{label}</span></div>}

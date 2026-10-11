@@ -1,0 +1,91 @@
+{
+  "name": "Activity",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Tenant."
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "start_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "end_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "location": {
+      "type": "string"
+    },
+    "capacity": {
+      "type": "integer",
+      "description": "Null means unlimited."
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": false
+    },
+    "enrollment_open": {
+      "type": "boolean",
+      "default": false
+    },
+    "enrollment_until": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "published",
+        "full",
+        "cancelled",
+        "completed"
+      ],
+      "default": "draft"
+    },
+    "check_in_enabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_paid": {
+      "type": "boolean",
+      "default": false
+    },
+    "price": {
+      "type": "integer",
+      "description": "Price in cents; null for free activities."
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "business_id",
+    "title",
+    "start_at",
+    "is_public",
+    "enrollment_open",
+    "status",
+    "check_in_enabled",
+    "is_paid",
+    "created_by",
+    "created_at"
+  ],
+  "rls": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

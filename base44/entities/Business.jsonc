@@ -1,0 +1,279 @@
+{
+  "name": "Business",
+  "type": "object",
+  "properties": {
+    "tenant_id": {
+      "type": "string",
+      "description": "Immutable tenant identity equal to this Business.id; assigned by trusted provisioning only. Missing values deny tenant reads.",
+      "rls": { "write": false }
+    },
+    "business_name": {
+      "type": "string",
+      "description": "Commercial brand name shown to customers"
+    },
+    "legal_name": {
+      "type": "string",
+      "description": "Legal entity name for billing"
+    },
+    "slug": {
+      "type": "string",
+      "description": "URL-safe unique identifier for subdomain routing"
+    },
+    "business_type": {
+      "type": "string",
+      "enum": [
+        "fruit_store",
+        "butcher",
+        "fishmonger",
+        "bakery",
+        "florist",
+        "grocery",
+        "other",
+        "hair_salon",
+        "barber",
+        "beauty",
+        "association"
+      ],
+      "default": "fruit_store"
+    },
+    "tax_id": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string",
+      "format": "email"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "whatsapp_phone": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "province": {
+      "type": "string"
+    },
+    "postal_code": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string",
+      "default": "ES"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "logo": {
+      "type": "string",
+      "description": "Logo image URL"
+    },
+    "favicon": {
+      "type": "string"
+    },
+    "primary_color": {
+      "type": "string",
+      "default": "#16A34A"
+    },
+    "secondary_color": {
+      "type": "string",
+      "default": "#0284C7"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Custom domain (e.g. frutaspaco.es)"
+    },
+    "subdomain": {
+      "type": "string",
+      "description": "Platform subdomain (e.g. frutas-paco)"
+    },
+    "timezone": {
+      "type": "string",
+      "default": "Europe/Madrid"
+    },
+    "currency": {
+      "type": "string",
+      "default": "EUR"
+    },
+    "language": {
+      "type": "string",
+      "default": "es"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "onboarding",
+        "trial",
+        "active",
+        "suspended",
+        "cancelled"
+      ],
+      "default": "onboarding"
+    },
+    "plan_id": {
+      "type": "string"
+    },
+    "subscription_status": {
+      "type": "string",
+      "enum": [
+        "none",
+        "trial",
+        "active",
+        "past_due",
+        "cancelled"
+      ],
+      "default": "none"
+    },
+    "trial_end_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "published_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "archived_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "archived_by": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "launch_review_status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted",
+        "changes_requested",
+        "approved",
+        "published"
+      ],
+      "default": "draft"
+    },
+    "launch_review_notes": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 2000
+    },
+    "launch_review_submitted_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "launch_reviewed_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date-time"
+    },
+    "launch_reviewed_by": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "business_mode": {
+      "type": "string",
+      "enum": [
+        "COMMERCE",
+        "BOOKING",
+        "HYBRID",
+        "ASSOCIATION"
+      ],
+      "default": "COMMERCE"
+    },
+    "template_id": {
+      "type": "string",
+      "default": "fresh-classic"
+    },
+    "appearance_config": {
+      "type": "object",
+      "description": "Template Engine V2 per-skin visual overrides (storefront + dashboard). Additive; absent = V1 behavior. Validated server-side against the selected template's skin supports. NEVER used for functional feature flags — those live in BusinessSettings.association_modules."
+    },
+    "cover_image": {
+      "type": "string"
+    },
+    "headline": {
+      "type": "string"
+    },
+    "tagline": {
+      "type": "string"
+    },
+    "demo_key": {
+      "type": "string"
+    },
+    "mutation_token": {
+      "type": "string",
+      "default": "",
+      "description": "Server-only durable mutation gate; recoverable only by an audited Super Admin action after the stale threshold"
+    },
+    "mutation_started_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "business_name",
+    "slug",
+    "business_type",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "$and": [
+            { "data.tenant_id": "{{user.data.business_id}}" },
+            { "data.tenant_id": { "$exists": true, "$nin": ["", null] } }
+          ]
+        },
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "companyxoxa@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "ax.network.hub@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "xoxamariles@gmail.com"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

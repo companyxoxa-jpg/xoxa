@@ -1,0 +1,94 @@
+{
+  "name": "Appointment",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string"
+    },
+    "customer_user_id": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "service_id": {
+      "type": "string"
+    },
+    "professional_id": {
+      "type": "string"
+    },
+    "service_name": {
+      "type": "string"
+    },
+    "professional_name": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string"
+    },
+    "start_time": {
+      "type": "string"
+    },
+    "end_time": {
+      "type": "string"
+    },
+    "starts_at": {
+      "type": "string"
+    },
+    "ends_at": {
+      "type": "string"
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "customer_email": {
+      "type": "string"
+    },
+    "privacy_accepted_at": {
+      "type": "string"
+    },
+    "price": {
+      "type": "integer"
+    },
+    "price_type": {
+      "type": "string",
+      "enum": ["fixed", "from"],
+      "default": "fixed"
+    },
+    "duration_minutes": {
+      "type": "integer"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "completed",
+        "no_show",
+        "cancelled"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "business_id",
+    "service_id",
+    "professional_id",
+    "date",
+    "start_time",
+    "end_time",
+    "status"
+  ],
+  "rls": {
+    "create": false,
+    "read": false,
+    "update": false,
+    "delete": false
+  }
+}

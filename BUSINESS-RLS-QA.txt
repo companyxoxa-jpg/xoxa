@@ -1,0 +1,28 @@
+Business RLS compatibility correction — QA only, 2026-10-11
+
+Observed: Business read {id: '{{user.data.business_id}}'} denied both correctly
+linked owners. Product read using a custom data.business_id field worked with
+the same user sessions. No backend handler was involved in the failing get.
+Exact internal Base44 conversion behavior is not observable; do not claim a
+proven internal ObjectId bug. The accepted root-id rule failed in this QA.
+
+Correction: immutable Business.tenant_id equals the persisted Business.id.
+Compare data.tenant_id to the protected user.data.business_id; reject absent,
+null and empty keys. Keep existing allowlisted admins and deny all direct
+create/update/delete. Reads still use the ordinary caller SDK, never service role.
+
+The two explicit synthetic QA Business records were initialized administratively.
+The new provisioning helper derives the key exclusively from the generated ID,
+rejects conflicting bindings and runs before onboarding links users. The existing
+trusted onboarding/demo writers initialize it; no privileged read fallback exists.
+
+IMPORTANT: NOT READY TO DEPLOY TO PRODUCTION. Existing Business records without
+tenant_id are intentionally denied by tenant RLS. Any future authorized release
+needs a reviewed, backed-up migration assigning tenant_id = each Business.id
+BEFORE changing the read rule, and a verification of the complete tenant mapping.
+No production migration or deployment was performed or authorized here.
+
+QA ID: 6aca8950491b4b2d74f6f62d.
+B real browser retest: 21/21 pilot checks and 4 additional tamper/list checks pass.
+A real browser retest: pending; auth.me returns 401 after previous session closure.
+Do not count local mocks or earlier A results as this correction's 42/42 proof.

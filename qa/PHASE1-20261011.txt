@@ -1,0 +1,222 @@
+RINNO QA - FASE 1: CIERRE DE SEGURIDAD (parcial, 2026-10-11)
+
+Entorno unico modificado: RINNO Seguridad QA, 6aca8950491b4b2d74f6f62d.
+Base local: 8e9bc850b2c832809bf8728d55c379bdb54e5e22, rama development/security-audit.
+QA checkpoint previo: 6acb5b4a0c5b44567a7ae162.
+QA checkpoint final: 6acb5d1985d7ff356a88b328, codigo 93004f8067be953f4a5bc2fa00919bfdd922b2da.
+No se ha modificado produccion, DNS, Stripe real ni datos de clientes.
+
+CORRECCIONES DE BARETO (gravedad media)
+AUTH-01: notas internas de Member solo legibles/escribibles por owner/admin en ManageMember y GetMemberProfile; proyeccion sin notas en ResolveMember y denegacion directa de campo Member.internal_notes. Permiso general members.write no concede permiso administrativo.
+AUTH-02: documentos audience=board requieren owner/admin para listado, apertura, publicacion y archivo. Audiencia desconocida denegada. El permiso general de documentos no basta.
+AUTH-03: enlace manual socio/usuario reservado a owner/admin. Exige User existente, is_verified=true, correo normalizado coincidente con Member y ausencia de pertenencia ajena. Autoenlace exige tambien correo verificado; se conservan controles de duplicados y trazabilidad.
+Estado: implementadas y desplegadas en QA, verificadas con pruebas unitarias. Aun NO verificadas de extremo a extremo con las identidades restringidas; no se declaran cerradas en entorno real.
+
+ARCHIVOS DE CODIGO/PRUEBAS
+base44/entities/Member.jsonc
+base44/functions/GetMemberProfile/entry.ts
+base44/functions/ManageAssociationRecords/entry.ts
+base44/functions/ViewAssociationDocument/entry.ts
+base44/shared/associations.js
+base44/shared/member-link.js
+tests/associations-activity.test.mjs
+tests/associations.test.mjs
+tests/member-link.test.mjs
+
+PRUEBAS LOCALES
+node --test tests/*.test.mjs: 342/342, cero fallos, cero omitidas.
+Playwright: 28/28. Son pruebas del navegador LOCAL, no sesiones de roles alojados.
+npm run lint: pasa. npm run typecheck: pasa. npm run build: pasa.
+Pruebas focalizadas tras el ultimo cambio: 68/68.
+Logs completos: RINNO-QA-FASE1-unit/lint/types/build/browser.txt.
+
+REGRESION REAL DE PROPIETARIOS
+42/42: 21 A + 21 B, sesiones independientes Chrome/Codex y auth.me con IDs distintos.
+A: 6acb4ef45bc98c05813041f5, Business 6aca8bffd29ed0095f3ea682.
+B: 6acb4f83199250398b7e9ace, Business 6aca8bffd29ed0095f3ea683.
+Evidencias: RINNO-QA-FASE1-PILOTO-A.json y -B.json.
+No equivale a cobertura de todas las entidades ni de todos los roles.
+
+FALLO DE CONFIGURACION T20
+Causa: faltaba STRIPE_WEBHOOK_SECRET en QA. Se configuro un secreto aleatorio solo QA sin copiar credenciales reales. No se guarda su valor en codigo, informe o evidencias.
+Control positivo HMAC local: checkout.session.completed con payment_status=unpaid y livemode=false -> HTTP200 ignored:true.
+Sin firma ->400; firma invalida, timestamp vencido y cuerpo alterado ->401.
+Se comprobo un Business ficticio creado en onboarding y Subscription pending antes y despues: permanecen sin activar (T19).
+Evidencias: RINNO-QA-FASE1-WEBHOOK.json y -UNPAID-STATE.json.
+Estas son solicitudes HTTP reales al backend alojado con eventos sinteticos firmados localmente. NO acreditan entrega desde Stripe ni cobros ni ciclo completo de facturacion.
+Se espero propagacion de secretos. El diagnostico temporal que solo devolvia indicadores booleanos fue retirado; BillingWebhook conserva su respuesta generica original. Un intento de transporte Python bloqueado por Cloudflare no se cuenta como prueba de negocio.
+Falta registrar el endpoint en el sandbox Stripe y configurar su secreto oficial coincidente para verificar entrega del proveedor, reintentos e idempotencia. El secreto de verificacion actual no procede de un WebhookEndpoint de Stripe.
+
+IDENTIDADES
+Siete alias gratuitos creados en Nominalia y dirigidos al buzon existente soporte@rinno.es:
+qa-empleado-a, qa-empleado-b, qa-cliente-a, qa-cliente-b, qa-comercial-a, qa-admin, qa-superadmin (todos @rinno.es).
+Se conservan dos alias propietarios existentes. Total: 9 alias QA y 3 buzones existentes. Sin nuevas contrataciones ni DNS.
+El acceso al gestor de correo ya esta resuelto. El webmail sigue mostrando login: falta sesion del buzon para recibir verificaciones. No se han marcado los siete alias como usuarios autenticados ni concedido privilegios por su nombre.
+Intervencion minima: Jonathan inicia sesion de soporte@rinno.es en https://webmail.nominalia.com/ y deja la bandeja abierta. Contraseñas/codigos solo en pantallas oficiales, nunca en chat.
+Despues: registros normales, verificacion por correo, auth.me distinto y asignacion de fixtures QA bajo control administrativo. No reutilizar cuenta privilegiada de produccion como Super Admin QA.
+
+MATRIZ: 7 APROBADOS, 0 FALLIDOS ABIERTOS, 19 NO VERIFICADOS
+El estado de cada prueba y su alcance exacto figuran en RINNO-QA-FASE1-MATRIZ26.csv.
+T13 conserva evidencia real de la ejecucion previa; no se afirma repetida en esta fase.
+
+T01 | NO VERIFICADO | Leer entidades privadas del otro negocio mediante list/filter/get
+  Rol: Propietario A y B
+  Esperado: Sin registros privados; get no revela existencia
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T02 | APROBADO | Modificar un centinela del otro negocio por API directa
+  Rol: Propietario A y B
+  Esperado: Denegado; registro intacto
+  Obtenido: Regresion autenticada A/B: 21+21 aprobadas. Alcance exacto Product, Business, User y Subscription en los JSON del piloto; no cubre todas las entidades.
+  Evidencia: RINNO-QA-FASE1-PILOTO-A.json; RINNO-QA-FASE1-PILOTO-B.json
+
+T03 | APROBADO | Eliminar un centinela del otro negocio por API directa
+  Rol: Propietario A y B
+  Esperado: Denegado; registro conservado
+  Obtenido: Regresion autenticada A/B: 21+21 aprobadas. Alcance exacto Product, Business, User y Subscription en los JSON del piloto; no cubre todas las entidades.
+  Evidencia: RINNO-QA-FASE1-PILOTO-A.json; RINNO-QA-FASE1-PILOTO-B.json
+
+T04 | NO VERIFICADO | updateMe con rinno_role=business_owner
+  Rol: Empleado A
+  Esperado: Denegado; identidad y permisos sin cambios
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T05 | NO VERIFICADO | updateMe con business_id=B y support_business_id=B
+  Rol: Empleado A
+  Esperado: Denegado; permanece en A
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T06 | NO VERIFICADO | Repetir cambios de autoridad mediante campos anidados y null
+  Rol: Empleado A
+  Esperado: No se modifica ni elimina autoridad
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T07 | APROBADO | Asignarse role=admin o contexto Super Admin
+  Rol: Propietario A
+  Esperado: Denegado; funciones Super Admin siguen inaccesibles
+  Obtenido: Regresion autenticada A/B: 21+21 aprobadas. Alcance exacto Product, Business, User y Subscription en los JSON del piloto; no cubre todas las entidades.
+  Evidencia: RINNO-QA-FASE1-PILOTO-A.json; RINNO-QA-FASE1-PILOTO-B.json
+
+T08 | NO VERIFICADO | Invocar funciones exclusivas de Super Admin
+  Rol: Administrador de plataforma no autorizado
+  Esperado: Denegado pese a role=admin
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T09 | NO VERIFICADO | Crear/actualizar/borrar RoleAssignment por API directa
+  Rol: Empleado A
+  Esperado: Denegado; asignaciones intactas
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T10 | NO VERIFICADO | Consultar y modificar información de B
+  Rol: Comercial asignado A
+  Esperado: Denegado; solo información autorizada de A accesible
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T11 | NO VERIFICADO | Leer datos internos, roles, auditoría, miembros y facturación
+  Rol: Cliente A
+  Esperado: Sin exposición interna
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T12 | NO VERIFICADO | Invocar todas las funciones sensibles sin sesión
+  Rol: Anónimo
+  Esperado: Rechazo de autenticación sin efectos
+  Obtenido: 67 sondeos anonimos repetidos: 58 HTTP401, 2 HTTP403, 5 HTTP400, 2 HTTP404. No acredita todos los efectos/acciones sensibles.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T13 | APROBADO | TrackOrder/GuestOrderLookup con objetos operadores, arrays y referencias incorrectas
+  Rol: Anónimo
+  Esperado: Rechazo; no devuelve datos privados
+  Obtenido: 6 peticiones reales: objetos y arrays 400; referencias inexistentes 404; respuestas genericas.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T14 | NO VERIFICADO | GetStorefront/CreateOrder con slug objeto e IDs de producto cruzados
+  Rol: Anónimo
+  Esperado: Rechazo; no mezcla datos ni crea pedido cruzado
+  Obtenido: 4 rechazos de slug objeto/array HTTP400. Falta pedido cruzado con carrito valido y fixtures completos.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T15 | NO VERIFICADO | Registro con business_id/rinno_role/support_business_id privilegiados
+  Rol: Nueva cuenta sintética
+  Esperado: Campos rechazados o saneados; sin privilegios
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T16 | NO VERIFICADO | Cambiar o vaciar SavedAddress.business_id después del alta
+  Rol: Cliente A
+  Esperado: Campo inmutable; alta válida propia sigue funcionando
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T17 | APROBADO | Consultar Subscription de B por API directa y ManageBilling
+  Rol: Propietario A
+  Esperado: Sin acceso a suscripciones ajenas
+  Obtenido: Regresion autenticada A/B: 21+21 aprobadas. Alcance exacto Product, Business, User y Subscription en los JSON del piloto; no cubre todas las entidades.
+  Evidencia: RINNO-QA-FASE1-PILOTO-A.json; RINNO-QA-FASE1-PILOTO-B.json
+
+T18 | NO VERIFICADO | Consultar Subscription de A por API directa y ManageBilling
+  Rol: Empleado y cliente A
+  Esperado: Denegado según política de propietario
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T19 | APROBADO | checkout.session.completed con pago incompleto
+  Rol: Emisor QA de evento sintetico con HMAC valido
+  Esperado: No activa negocio ni suscripción
+  Obtenido: HTTP200 ignored:true; Business permanece onboarding/subscription_status:none y Subscription pending. Evento sintetico firmado enviado al endpoint alojado; no entrega originada por Stripe ni pago.
+  Evidencia: RINNO-QA-FASE1-WEBHOOK.json; RINNO-QA-FASE1-UNPAID-STATE.json
+
+T20 | APROBADO | Webhook con firma inválida/ausente, cuerpo alterado y timestamp vencido
+  Rol: Emisor anónimo
+  Esperado: Rechazo por firma; sin cambios
+  Obtenido: Secreto QA de verificacion configurado. Control positivo firmado 200; ausente400; invalida, vencida y cuerpo alterado401. Validacion alojada real, firma HMAC local sintetica; no entrega desde Stripe.
+  Evidencia: RINNO-QA-FASE1-WEBHOOK.json
+
+T21 | NO VERIFICADO | Provocar errores de validación/proveedor controlados
+  Rol: Usuario QA y emisor webhook
+  Esperado: Respuesta sin secretos, tokens ni detalles sensibles
+  Obtenido: Sin patrones de secretos en 13 respuestas negativas; falta error proveedor controlado. Plataforma revela ausencia de configuracion Stripe.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T22 | NO VERIFICADO | Conceder roles, asignar pagos y ejecutar operaciones sensibles
+  Rol: Empleado A sin permiso de asociaciones
+  Esperado: Denegado; datos intactos
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T23 | NO VERIFICADO | Operar sobre miembro/pago/credencial de B
+  Rol: Administrador de asociación A
+  Esperado: Denegado; datos de B intactos
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T24 | NO VERIFICADO | Operaciones positivas de su negocio y asociación
+  Rol: Propietario/administrador autorizado A
+  Esperado: Permitido; efectos correctos y auditoría atribuible
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T25 | NO VERIFICADO | Operación administrativa y consulta de auditoría
+  Rol: Super Admin autorizado QA
+  Esperado: Permitido solo a identidad autorizada; traza correcta
+  Obtenido: Pendiente de cobertura completa con identidades adicionales y fixtures autorizados.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+T26 | NO VERIFICADO | Regresión positiva de tienda, reserva, contrato, asociación, facturación y demo sintética
+  Rol: Propietarios, empleados y clientes QA
+  Esperado: Funciones legítimas conservadas sin exposición cruzada
+  Obtenido: Resuelto prerrequisito Business propio: A/B aprobados. Recorridos completos tienda/reserva/contrato/asociacion/demo NO VERIFICADOS en QA.
+  Evidencia: RINNO-QA-AUDITORIA-AUTONOMA.txt
+
+RIESGOS Y SIGUIENTE PASO
+No esta completado el cierre de seguridad y no procede publicar correcciones en produccion.
+Pendientes: controles reales empleados/clientes/comercial/admin/Super Admin, pruebas asociaciones AUTH-01/02/03 con sesiones reales, cobertura de entidades privadas, registro malicioso, campos inmutables, errores de proveedor y regresiones funcionales completas.
+Mantener abiertos los riesgos de concurrencia de reservas, doble procesamiento de webhook, limites de endpoints publicos y compatibilidad/migracion de datos senalados por Bareto hasta pruebas especificas.
+La proxima fase inmediata es verificar las siete identidades y ejecutar las pruebas pendientes; Stripe solo sandbox despues de completar su configuracion oficial.

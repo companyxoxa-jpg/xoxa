@@ -1,0 +1,90 @@
+RINNO SEGURIDAD QA — AUDITORIA AUTONOMA
+2026-10-11. App exclusiva: 6aca8950491b4b2d74f6f62d.
+
+CONCLUSION
+PILOTO: 42/42 APROBADO con sesiones reales A y B, repetido despues del ajuste UI.
+MATRIZ 26: 5 APROBADO, 1 FALLIDO por configuracion QA, 20 NO VERIFICADO.
+No esta completada la auditoria ni listo para publicar o declarar cerrada seguridad.
+Produccion, DNS, credenciales activas, Stripe real y datos de clientes intactos.
+
+IDENTIDADES Y AISLAMIENTO REAL
+A auth.me ID 6acb4ef45bc98c05813041f5, business 6aca8bffd29ed0095f3ea682.
+B auth.me ID 6acb4f83199250398b7e9ace, business 6aca8bffd29ed0095f3ea683.
+Ambos role=user y rinno_role=business_owner; Chrome A y navegador Codex B.
+IDs distintos y sesiones concurrentes diferentes, sin extraer/copiar tokens.
+Cada propietario lee su Business, recibe404 para el ajeno, modifica su producto
+por ManageProduct y no puede cambiar su pertenencia mediante inyeccion.
+Se verifica rechazo de lectura/escritura/borrado cruzado, facturacion ajena,
+funciones Super Admin y cambios de campos de autoridad. Precio ficticio restaurado.
+El piloto prueba escritura de PRODUCTO propio; no concede escritura directa de
+Business, que sigue bloqueada por politica. No confundir ambos alcances.
+A supera ademas4 controles tenant_id (403 al reasignar/null/vacio; lista propia).
+B tenia esos4 controles documentados en el turno anterior, no se suman a las42.
+
+CONTROLES DEL PILOTO
+El click semantico del navegador funciona y ejecuta peticiones reales. No se
+reprodujo un bloqueo permanente de React. Faltaba feedback inmediato en acciones;
+se mostraba el resultado anterior durante la espera y habia retorno silencioso
+ante identidad no admitida. Ahora hay EN CURSO, bloqueo temporal de controles,
+liberacion en finally, error visible saneado y resumen de aprobadas al finalizar.
+Verificado en Chrome y Codex con repeticion completa. Sin cambiar login o RLS.
+
+CORRECCION BUSINESS ANTERIOR, AHORA VALIDADA EN AMBOS
+Commit38d29e6: lectura por tenant_id inmutable igual al Business.id, en lugar de
+la comparacion raiz id que denegaba lectura propia. Vinculos User eran correctos.
+Sin lectura global ni service role para sustituir lecturas autenticadas.
+ADVERTENCIA DE MIGRACION: Business sin tenant_id queda denegado; produccion requiere
+respaldo y backfill autorizado tenant_id=id antes de activar la nueva regla.
+
+PRUEBAS PUBLICAS REALES
+67 sondeos anonimos: 58x401, 2x403, 5x400, 2x404. Son sondeos de rechazo, no
+prueba exhaustiva de ausencia de efectos para cada accion backend.
+13 negativos especificos: 11 cumplen esperado, 2 no alcanzan validador webhook.
+T13: TrackOrder/GuestOrderLookup rechazan objetos y arrays400; referencias falsas404.
+T14 parcial: GetStorefront/CreateOrder rechazan slug objeto/array400.
+T20: sin firma400 'Webhook rechazado'; firma invalida y timestamp1 devuelven401
+con 'No Stripe webhook secret configured for this app'. Es un bloqueo de
+configuracion de plataforma, no evidencia de aceptacion insegura. No se cambio
+el resultado esperado para contar un401 como validacion criptografica aprobada.
+No aparecen patrones de claves en las13 respuestas. Esto no prueba todos los
+caminos de error ni reemplaza la prueba de evento firmado valido y cuerpo alterado.
+T19 requiere configuracion Stripe TEST y evento firmado de pago incompleto.
+
+BLOQUEOS CONCRETOS Y SOLICITUD AGRUPADA
+El inventario real de User contiene solo los2 propietarios y el creador admin.
+No se usa ese creador como cuenta privilegiada de prueba ni se suplanta su sesion.
+Faltan7 identidades QA verificadas: empleadoA, empleadoB, clienteA, clienteB,
+comercialA, adminQA sin allowlist Super Admin, y SuperAdmin exclusivo QA.
+El registro disponible usa correo+password y verifyOtp; no existe en las
+herramientas disponibles un mecanismo de alta autenticada que omita legitimamente
+la verificacion del buzon. No hay sesion de correo QA disponible para completar OTP.
+Intervencion minima agrupada: disponer de7 direcciones gratuitas controladas y
+completar su verificacion/inicio de sesion en QA (sin enviar claves o codigos al chat),
+y configurar exclusivamente Stripe TEST/secreto webhook QA mediante su panel seguro.
+Los alias pueden dirigir al buzon existente, pero no se asume que el signo+ funcione.
+El agente puede preparar fixtures, asignaciones autorizadas, pruebas y evidencias
+una vez disponibles las identidades. No se requiere ampliar permisos en produccion.
+No se han creado cuentas sin verificar, contratado servicios ni debilitado auth.
+
+VALIDACION LOCAL Y REMOTA
+329 unitarias, 28 pruebas navegador: APROBADO. Lint, typecheck, build local: APROBADO.
+El navegador local usa su entorno de pruebas; no cuenta como seguridad real Base44.
+Build remoto QA: exit0. Primer intento sin cwd fallo por buscar/package.json;
+repetido con cwd='.' correcto. Advertencia Browserslist no bloqueante.
+Logs: work/qa-autonomous-{unit,lint,types,build,browser}.txt.
+
+CAMBIOS Y RECUPERACION
+Rama development/security-audit.
+38d29e6: correccion RLS tenant_id, aprovisionamiento y pruebas (turno anterior).
+e15bda9: qa/QaPilot.jsx y qa/public-security.mjs, copia QA y sondeos reproducibles.
+QA remoto: src/pages/QaPilot.jsx.
+Checkpoint 6acb54d3666c184b70a8e799; commit926e43d6c51416b088116ca5dd59a8036ec78753.
+Los archivos qa/ son herramientas de auditoria; no incorporados a rutas produccion.
+
+EVIDENCIAS
+RINNO-QA-FINAL-A.json / RINNO-QA-FINAL-B.json:21 checks cada uno y actor real.
+RINNO-QA-42-FINAL.csv:42 filas con accion,rol,esperado,obtenido,estado,hora.
+RINNO-QA-26-FINAL.csv:26 casos con alcance y limitaciones.
+RINNO-QA-INMUTABILIDAD-A.json:4 controles reales adicionales.
+RINNO-QA-ENDPOINTS-ANONIMOS.json y RINNO-QA-PUBLICOS-FINAL.json:HTTP reales.
+RINNO-QA-FINAL-A.png / RINNO-QA-FINAL-B.png:panel con21/21 por actor.

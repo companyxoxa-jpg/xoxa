@@ -1,0 +1,96 @@
+{
+  "name": "SavedAddress",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Business this address belongs to — addresses are per-store, not global",
+      "rls": {
+        "write": false
+      }
+    },
+    "label": {
+      "type": "string",
+      "description": "Casa, Trabajo, Otro"
+    },
+    "recipient_name": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "postal_code": {
+      "type": "string"
+    },
+    "province": {
+      "type": "string"
+    },
+    "delivery_notes": {
+      "type": "string"
+    },
+    "latitude": {
+      "type": "number"
+    },
+    "longitude": {
+      "type": "number"
+    },
+    "is_default": {
+      "type": "boolean",
+      "default": false
+    },
+    "owner_user_id": {
+      "type": "string",
+      "description": "Authenticated customer assigned exclusively by the backend.",
+      "rls": {
+        "write": false
+      }
+    }
+  },
+  "required": [
+    "business_id",
+    "address"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.owner_user_id": "{{user.id}}"
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "companyxoxa@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "ax.network.hub@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "xoxamariles@gmail.com"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

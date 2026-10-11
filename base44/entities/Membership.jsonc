@@ -1,0 +1,82 @@
+{
+  "name": "Membership",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Tenant."
+    },
+    "member_id": {
+      "type": "string",
+      "description": "The Member this membership belongs to."
+    },
+    "plan_id": {
+      "type": "string",
+      "description": "Reference to the MembershipPlan at creation time. Snapshots below freeze the values relevant to this membership."
+    },
+    "plan_name_snapshot": {
+      "type": "string",
+      "description": "Frozen plan name at membership creation. Preserved even if the plan is later renamed."
+    },
+    "fee_amount_snapshot": {
+      "type": "integer",
+      "description": "Frozen fee in cents at membership creation."
+    },
+    "fee_period_snapshot": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "quarterly",
+        "biannual",
+        "annual",
+        "one_time",
+        "custom"
+      ],
+      "description": "Frozen fee period at membership creation."
+    },
+    "start_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "end_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Expiration date. Null = no expiry / lifetime."
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "active",
+        "expired",
+        "cancelled",
+        "suspended"
+      ],
+      "default": "active"
+    },
+    "auto_renew": {
+      "type": "boolean",
+      "default": false
+    },
+    "renewed_from": {
+      "type": "string",
+      "description": "Previous Membership id when this membership is a renewal, forming a history chain."
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "member_id",
+    "plan_id",
+    "start_date",
+    "status"
+  ],
+  "rls": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

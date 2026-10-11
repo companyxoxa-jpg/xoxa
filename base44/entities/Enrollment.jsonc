@@ -1,0 +1,58 @@
+{
+  "name": "Enrollment",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Tenant; must match Activity and Member."
+    },
+    "activity_id": {
+      "type": "string"
+    },
+    "member_id": {
+      "type": "string"
+    },
+    "enrolled_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "confirmed",
+        "waitlisted",
+        "cancelled",
+        "attended",
+        "no_show"
+      ]
+    },
+    "check_in_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "cancelled_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "cancellation_reason": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "activity_id",
+    "member_id",
+    "enrolled_at",
+    "status"
+  ],
+  "rls": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

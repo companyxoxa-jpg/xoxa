@@ -1,0 +1,46 @@
+RINNO - FASE 2 STRIPE TEST - 2026-10-11
+
+CONCLUSION: NO LISTO para piloto comercial. Se han validado pagos y webhooks reales de Stripe Test y corregido defectos, pero faltan el recorrido autenticado de Super Admin QA y la configuracion fiscal. Produccion no modificada.
+
+ALCANCE
+Base44 QA: 6aca8950491b4b2d74f6f62d. Stripe sandbox: acct_1UPKv9RVi3kAwivj, livemode=false. Rama development/security-audit; base 24496d6a428b74d27cccf2a8a600a3d127bdd102. Checkpoint QA final 6acb8482796075404be0e48c / 35b90c4b1176f5a47f10aa0cc8e098ebe91a3347.
+Los negocios de facturacion son ficticios. Su preparacion por conector administrativo no demuestra permisos de usuarios. Los checkouts se crearon con la definicion del codigo y API oficial; el pago se completo en Checkout y los webhooks se recibieron realmente en QA. No sustituye el recorrido positivo autenticado de CreateBillingCheckout/ManageBilling.
+
+CORRECCIONES
+- Alta: eliminado payment_method_collection incompatible con mode=payment (Stripe devolvia 400).
+- No activar por checkout completado sin pago; soporte de confirmacion asincrona.
+- Validar importe 39900 EUR, cliente, PaymentIntent y modo test; origen QA fijado.
+- Idempotencia por checkout y reconciliacion de suscripciones existentes, no solo por event_id.
+- Exclusividad por negocio, reintento de registros fallidos, rechazo de procesamiento simultaneo.
+- Consultar estado canonico Stripe ante eventos fuera de orden; conservar cancelacion/periodo gratuito.
+- Compatibilidad con referencias modernas de factura y periodos en items de suscripcion.
+- Distinguir factura de alta mediante metadata; sincronizar tarifa Standard/Premium cuando cambia Stripe.
+- ManageBilling deja que el webhook confirme el estado, sin escribir active al reanudar un trial.
+- Errores publicos genericos y pruebas de no exposicion de secretos.
+- Texto local ContractCenter: un mes desde el alta; no prometer 30 dias exactos.
+No se modificaron esquemas ni RLS. El backend se actualizo solo en QA; el texto del frontend completo queda en el codigo local (QA utiliza el piloto minimo).
+
+EVIDENCIAS REALES
+Standard: checkout cs_test_a1KqAcGfcGlwxhiuCF1vnex7FOg4cXn3bOIYmR2RCOqaBj6HXkUkCPKCbg; pago 39900 EUR; sub_1UPLu6RVi3kAwivj2Ajr1KY1. Cancelar/reanudar/cambiar plan/cancelar definitivamente y reenviar evento inicial no reactivaron la suscripcion cancelada.
+Premium: checkout cs_test_a1sUaxtzOC6KuSj1z2kvOHzu0btSwsa5KrKydU8LZ0hD3B7scetsFSVCvJ; tarjeta rechazada y reintento correcto; sub_1UPLxiRVi3kAwivjliXBNi6a. Renovacion 3999 y factura de impago in_1UPLzmRVi3kAwivj6DYrHKj3: rechazo, recuperacion y rechazo de cobro duplicado de factura ya pagada.
+Calendario Stripe Test Clock clock_1UPM1ARVi3kAwivjlQGyFvOc: alta 11/10/2026 12:38:20 UTC; fin gratuito 11/11/2026 misma hora; prorrateo 16,20 EUR hasta 01/12; mensualidad 24,95 EUR desde 01/12. Esto es un mes desde el alta, no todo el siguiente mes civil gratuito. Debe confirmarse que coincide con el acuerdo comercial.
+SEPA: checkout cs_test_a17ohjitHqJOX5HYX4JxXJKYYCfaRbwpkyNeRfHAju78vL2OLe8tcpLyfm. Durante processing/unpaid: Business onboarding/none. Tras succeeded/paid: Business trial y Subscription trialing por checkout.session.async_payment_succeeded real.
+Firmas: Stripe real aceptado; firma ausente 400; firma invalida rechazada 401 por plataforma. Endpoints sensibles sin autenticacion 401.
+30 registros BillingWebhookEvent de estos negocios estan processed en captura final. Hubo errores transitorios/concurrencia y se recuperaron con reenvio oficial de Stripe; el contador pending_webhooks de Stripe no se interpreta como cero a partir de un exit CLI.
+
+REGRESIONES
+357/357 unitarias locales. 28/28 navegador local. Lint, TypeScript y compilacion terminan con codigo 0. 42/42 comprobaciones reales autenticadas de propietarios: A y B, 21 cada uno, IDs distintos conservados en evidencia. Las 26/26 de Fase 1 son evidencia historica preservada, no una repeticion completa en esta fase.
+Los mocks locales no se presentan como pruebas alojadas reales.
+
+PENDIENTES / RIESGOS
+1. IVA: factura in_1UPLxeRVi3kAwivjUJRQoujg tiene total=39900, neto=39900, total_taxes vacio. tax_behavior=inclusive por si solo no desglosa IVA. FALLIDO el criterio de factura con IVA desglosado; falta configuracion fiscal aprobada y nueva prueba. No se activo Stripe Tax de pago ni se invento un tipo fiscal.
+2. Sin sesion Super Admin QA: falta alta y gestion positivas a traves de los endpoints autenticados de la aplicacion. Jonathan debe iniciar sesion como qa-superadmin@rinno.es en https://preview-sandbox--6aca8950491b4b2d74f6f62d.base44.app/login?returnTo=%2F. Si necesita recuperar acceso, debe introducir y confirmar la nueva credencial en la pantalla oficial; nunca enviar claves/codigos al chat.
+3. Cambio de plan probado en Stripe y webhook; la accion de cambio en ManageBilling no esta implementada. No aprobado el flujo completo desde RINNO.
+4. El bloqueo persistente cierra en seguro ante resultado incierto, pero queda pendiente prueba alojada de caida del proceso y reconciliacion administrativa. No prometer recuperacion automatica de todos los fallos.
+5. Un registro historico de factura de alta anterior a la correccion quedo clasificado como renewal; las facturas nuevas se clasifican como setup. Una factura de trial de importe cero queda como setup. No se reescribieron evidencias para ocultarlo.
+6. El mapeo de plan usa importe/divisa/periodicidad; conviene reforzar la vinculacion exacta con Price IDs y cantidad antes de admitir catalogos mas amplios.
+7. Expiracion real comprobada en un checkout de un negocio ya activo; no acredita el caso completo de expiracion sobre un negocio nuevo sin activar. Fallo asincrono SEPA pendiente; se verifico exito asincrono.
+
+ENTREGA
+Matriz CSV con estados individuales y evidencia. ZIP de codigo del commit indicado en manifiesto, excluye .env, .git, .app.jsonc, dependencias, builds, caches y secretos. ZIP de evidencia separado. Los JSON contienen solo fixtures QA y resultados seleccionados; las capturas corresponden a pruebas ficticias.
+Documentacion de pruebas: https://docs.stripe.com/billing/testing y https://docs.stripe.com/testing .

@@ -1,0 +1,5 @@
+Security QA matrix completed: see verified-20261011/REPORT.txt and security-26.csv.
+QA only 6aca8950491b4b2d74f6f62d; local .app.jsonc is production: never deploy implicitly.
+26/26 scoped cases, 42/42 owners, 258/258 cross-tenant reads. 342 unit,28 local browser,lint/types/build passed.
+Seven identities verified through official email OTP; no remaining mailbox access blocker.
+Next: official Stripe sandbox webhook registration/secret, retry/idempotency and checkout tests. Parameterize QA return URLs before creating checkout. No production deployment.

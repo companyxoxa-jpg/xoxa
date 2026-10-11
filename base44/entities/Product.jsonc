@@ -1,0 +1,153 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Tenant identifier — mandatory for multi-tenant isolation"
+    },
+    "name": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category_id": {
+      "type": "string"
+    },
+    "image": {
+      "type": "string"
+    },
+    "gallery": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "price": {
+      "type": "integer",
+      "description": "Price in minor currency units (cents). 189 = 1.89 EUR"
+    },
+    "compare_at_price": {
+      "type": "integer",
+      "description": "Reference/strike-through price in cents"
+    },
+    "cost_price": {
+      "type": "integer",
+      "description": "Internal cost in cents (optional)"
+    },
+    "unit_type": {
+      "type": "string",
+      "enum": [
+        "kg",
+        "gram",
+        "unit",
+        "tray",
+        "bunch",
+        "bag",
+        "box"
+      ],
+      "default": "kg"
+    },
+    "unit_label": {
+      "type": "string",
+      "description": "Display label for unit, e.g. kg, ud, manojo"
+    },
+    "minimum_quantity": {
+      "type": "number",
+      "default": 0.5
+    },
+    "quantity_step": {
+      "type": "number",
+      "default": 0.5,
+      "description": "Increment step for weight-based ordering"
+    },
+    "origin": {
+      "type": "string",
+      "description": "Geographic origin label"
+    },
+    "sku": {
+      "type": "string"
+    },
+    "barcode": {
+      "type": "string"
+    },
+    "stock_mode": {
+      "type": "string",
+      "enum": [
+        "unlimited",
+        "tracked",
+        "made_to_order"
+      ],
+      "default": "unlimited"
+    },
+    "stock_quantity": {
+      "type": "number",
+      "default": 0
+    },
+    "is_available": {
+      "type": "boolean",
+      "default": true
+    },
+    "is_featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "sort_order": {
+      "type": "integer",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "archived"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "business_id",
+    "name",
+    "price",
+    "unit_type"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.business_id": "{{user.data.business_id}}"
+        },
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "companyxoxa@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "ax.network.hub@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "xoxamariles@gmail.com"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

@@ -1,0 +1,217 @@
+[
+  {
+    "entity": "Activity",
+    "A": "6acb61a478991f90779beb31",
+    "B": "6acb61a478991f90779beb32"
+  },
+  {
+    "entity": "BillingWebhookEvent",
+    "A": "6acb61a6ff62ca521e80fd85",
+    "B": "6acb61a6ff62ca521e80fd86"
+  },
+  {
+    "entity": "BillingInvoice",
+    "A": "6acb61a80b6f17dedc750c69",
+    "B": "6acb61a80b6f17dedc750c6a"
+  },
+  {
+    "entity": "MemberConsent",
+    "A": "6acb61aaa989e74035321d04",
+    "B": "6acb61aaa989e74035321d05"
+  },
+  {
+    "entity": "CredentialValidationAttempt",
+    "A": "6acb61ad963bd6ff6a9f3653",
+    "B": "6acb61ad963bd6ff6a9f3654"
+  },
+  {
+    "entity": "Appointment",
+    "A": "6acb61af577b15419b39cefc",
+    "B": "6acb61af577b15419b39cefd"
+  },
+  {
+    "entity": "LaunchImportJob",
+    "A": "6acb61b19ab7b8d9e13f842a",
+    "B": "6acb61b19ab7b8d9e13f842b"
+  },
+  {
+    "entity": "TeamInvitation",
+    "A": "6acb61b387240e98a1dcde7a",
+    "B": "6acb61b387240e98a1dcde7b"
+  },
+  {
+    "entity": "MemberFee",
+    "A": "6acb61b5278de07fa1441e68",
+    "B": "6acb60b3757c426d1b4e6e5f"
+  },
+  {
+    "entity": "CustomerAddress",
+    "A": "6acb61b74edc241f3ede0447",
+    "B": "6acb61b74edc241f3ede0448"
+  },
+  {
+    "entity": "Product",
+    "A": "6acb506c8a5632ab7b03bf9b",
+    "B": "6acb506c8a5632ab7b03bf9c"
+  },
+  {
+    "entity": "MemberImportJob",
+    "A": "6acb61baff62ca521e80fd98",
+    "B": "6acb61baff62ca521e80fd99"
+  },
+  {
+    "entity": "CscNotice",
+    "A": "6acb61bc510169b58be0c7d2",
+    "B": "6acb61bc510169b58be0c7d3"
+  },
+  {
+    "entity": "OrderItem",
+    "A": "6acb61bef2581209eb9ad14e",
+    "B": "6acb61bef2581209eb9ad14f"
+  },
+  {
+    "entity": "Subscription",
+    "A": "6acb506f5d3afb235f0e3708",
+    "B": "6acb506f5d3afb235f0e3709"
+  },
+  {
+    "entity": "Category",
+    "A": "6acb61c1ee1be73b1cbbfa35",
+    "B": "6acb61c1ee1be73b1cbbfa36"
+  },
+  {
+    "entity": "Membership",
+    "A": "6acb61c379dd5644fcad3fd6",
+    "B": "6acb61c379dd5644fcad3fd7"
+  },
+  {
+    "entity": "Order",
+    "A": "6acb61c53498436d408391f9",
+    "B": "6acb61c53498436d408391fa"
+  },
+  {
+    "entity": "MemberPayment",
+    "A": "6acb61c884c6b0313be3b818",
+    "B": "6acb60b54b61f1332bec98e4"
+  },
+  {
+    "entity": "FulfillmentSlot",
+    "A": "6acb61ca5874cb0df7c6a04f",
+    "B": "6acb61ca5874cb0df7c6a050"
+  },
+  {
+    "entity": "Enrollment",
+    "A": "6acb61cc7f1791357c1b102e",
+    "B": "6acb61cc7f1791357c1b102f"
+  },
+  {
+    "entity": "BusinessSettings",
+    "A": "6acb60f8ff350d1f8ae4cb11",
+    "B": "6acb61ce8b203d332cbd694c"
+  },
+  {
+    "entity": "AssociationLegalPolicy",
+    "A": "6acb61d0bcfedb9f3757f56a",
+    "B": "6acb61d0bcfedb9f3757f56b"
+  },
+  {
+    "entity": "AuditLog",
+    "A": "6acb60c8e7906c461d63f173",
+    "B": "6acb60c49d1c82622561445d"
+  },
+  {
+    "entity": "PaymentAllocation",
+    "A": "6acb61d27e63e54d1157700a",
+    "B": "6acb60b596f0697102c1cecf"
+  },
+  {
+    "entity": "BookingService",
+    "A": "6acb61d536064d140c7ab8ca",
+    "B": "6acb61d536064d140c7ab8cb"
+  },
+  {
+    "entity": "SavedAddress",
+    "A": "6acb5fdc5847da57d2d63fbd",
+    "B": "6acb61d7577b15419b39cf2c"
+  },
+  {
+    "entity": "Member",
+    "A": "6acb602aa74456e5475e8945",
+    "B": "6acb60369621cc25b8955365"
+  },
+  {
+    "entity": "Customer",
+    "A": "6acb61da6af2611e02869c7e",
+    "B": "6acb61da6af2611e02869c7f"
+  },
+  {
+    "entity": "CscCatalogItem",
+    "A": "6acb61dd0d87ac2feef7b7f8",
+    "B": "6acb61dd0d87ac2feef7b7f9"
+  },
+  {
+    "entity": "ClientDocument",
+    "A": "6acb61df823df83d7fb1ba9d",
+    "B": "6acb61df823df83d7fb1ba9e"
+  },
+  {
+    "entity": "CscVisit",
+    "A": "6acb61e131ca36da5a17f88f",
+    "B": "6acb61e131ca36da5a17f890"
+  },
+  {
+    "entity": "AssociationSetup",
+    "A": "6acb61e3acdea635fe31d733",
+    "B": "6acb61e3acdea635fe31d734"
+  },
+  {
+    "entity": "BillingPayment",
+    "A": "6acb61e5a7d1fa748a702fc3",
+    "B": "6acb61e5a7d1fa748a702fc4"
+  },
+  {
+    "entity": "CscDispensation",
+    "A": "6acb61e82d1fe0679081a9a0",
+    "B": "6acb61e82d1fe0679081a9a1"
+  },
+  {
+    "entity": "BookingProfessional",
+    "A": "6acb61ea10a99fabd9de5992",
+    "B": "6acb61ea10a99fabd9de5993"
+  },
+  {
+    "entity": "RoleAssignment",
+    "A": "6acb602c9a5a3aa8b5408c59",
+    "B": "6acb61ec3eed4dbb87572721"
+  },
+  {
+    "entity": "MembershipPlan",
+    "A": "6acb61eeb9a7f0369ee3a4ab",
+    "B": "6acb61eeb9a7f0369ee3a4ac"
+  },
+  {
+    "entity": "AssociationIncident",
+    "A": "6acb61f08f5268bc6a8762f6",
+    "B": "6acb61f08f5268bc6a8762f7"
+  },
+  {
+    "entity": "AssociationDocument",
+    "A": "6acb602bc151ec313105e221",
+    "B": "6acb61f265eda2cf1ac13960"
+  },
+  {
+    "entity": "Credential",
+    "A": "6acb61f4f966f020e1c269cc",
+    "B": "6acb60b6179cfd23f330aa43"
+  },
+  {
+    "entity": "Business",
+    "A": "6aca8bffd29ed0095f3ea682",
+    "B": "6aca8bffd29ed0095f3ea683"
+  },
+  {
+    "entity": "User",
+    "A": "6acb4ef45bc98c05813041f5",
+    "B": "6acb4f83199250398b7e9ace"
+  }
+]

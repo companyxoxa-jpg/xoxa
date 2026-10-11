@@ -1,0 +1,17 @@
+(async()=>{
+const A='6aca8bffd29ed0095f3ea682',B='6aca8bffd29ed0095f3ea683';const out=[];
+const c=n=>globalThis.qaHarness.get(n).client;
+const safe=e=>({http:e.status||e.response?.status||0,error:e.data?.error||e.response?.data?.error||e.message});
+async function denied(id,name,action,run){let result;try{const r=await run(c(name));result={status:'FALLIDO',obtained:'Operation allowed',returnedCount:Array.isArray(r)?r.length:undefined};if(Array.isArray(r)&&r.length===0)result={status:'APROBADO',obtained:'No records returned'};}catch(e){const s=safe(e);result={status:[401,403,404].includes(s.http)?'APROBADO':'NO VERIFICADO',...s};}out.push({id,name,action,expected:'Denied, no unauthorized data or mutation',...result});}
+const staff='qa-empleado-a';const original=await c(staff).auth.me();
+for(const [id,payload] of [['T04',{rinno_role:'business_owner'}],['T05',{business_id:B,support_business_id:B}],['T06',{data:{rinno_role:'super_admin',business_id:B},rinno_role:null,business_id:null,support_business_id:null}]]){
+ await denied(id,staff,'auth.updateMe protected authority',x=>x.auth.updateMe(payload));const after=await c(staff).auth.me();out.push({id,name:staff,action:'auth.me authority unchanged',expected:'Same ID, role and tenant',status:after.id===original.id&&after.role===original.role&&after.business_id===original.business_id&&after.rinno_role===original.rinno_role&&!after.support_business_id?'APROBADO':'FALLIDO',obtained:{id:after.id,role:after.role,business_id:after.business_id,rinno_role:after.rinno_role}});
+}
+for(const fn of ['ManageBilling','ManageBusiness','ManageCommercial','LinkBusinessUser','ManageSupportMode'])await denied('T08','qa-admin',fn+' administrative action',x=>x.functions.invoke(fn,{action:fn==='ManageBilling'?'metrics':'list',business_id:A,email:'qa-empleado-a@rinno.es',rinno_role:'business_owner'}));
+await denied('T09',staff,'Create RoleAssignment',x=>x.entities.RoleAssignment.create({business_id:A,user_id:original.id,role:'owner'}));
+for(const entity of ['RoleAssignment','AuditLog','Member','Subscription','BillingPayment','BillingInvoice','Order','Contract'])await denied('T11','qa-cliente-a','Read internal '+entity,x=>x.entities[entity].filter({business_id:A}));
+for(const name of ['qa-empleado-a','qa-cliente-a']){await denied('T18',name,'Direct own Subscription',x=>x.entities.Subscription.filter({business_id:A}));await denied('T18',name,'ManageBilling own summary',x=>x.functions.invoke('ManageBilling',{action:'summary',business_id:A}));}
+for(const fn of ['ManageRoleAssignment','ManageMemberFee','ManageCredential'])await denied('T22',staff,fn,x=>x.functions.invoke(fn,{action:fn==='ManageRoleAssignment'?'create':fn==='ManageCredential'?'issue':'generate',user_id:original.id,role:'owner',member_id:'qa-nonexistent-member'}));
+await denied('SETUP-CLOSED',staff,'Provisioning endpoint closed',x=>x.functions.invoke('QaProvisionVerifiedRoles',{}));
+return {app:'6aca8950491b4b2d74f6f62d',at:new Date().toISOString(),method:'Real user SDK sessions after official email verification; no service role used in these assertions',checks:out};
+})()

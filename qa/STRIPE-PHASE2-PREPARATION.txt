@@ -1,0 +1,30 @@
+RINNO - FASE 2 STRIPE TEST - PREPARACION, NO CIERRE
+Fecha: 2026-10-11
+Base local: 3eb595ddb4bd9778f5610d078f2eedb905389e4d, development/security-audit.
+Base44 QA: 6aca8950491b4b2d74f6f62d.
+Stripe sandbox comprobado por Dashboard y GET /v1/account: acct_1UPKv9RVi3kAwivj, RINNO Seguridad QA, clave TEST. No claves incluidas.
+Se reclamo el sandbox existente en la cuenta Rinno. Se cancelo la instalacion opcional de Base44 en la cuenta activa. No se realizaron cargos ni cambios de produccion.
+Incidencia de preparacion: connectors push ignoro --dir dentro del proyecto y retiro el conector stripe QA. Se restauro desde directorio ajeno al proyecto; respuesta provisioned y posteriores llamadas synced. No se cambiaron reglas RLS ni codigo alojado. Debe comprobarse correspondencia de secretos de runtime con este sandbox antes de crear checkout.
+
+HALLAZGOS DE REVISION ESTATICA, TODAVIA SIN CORRECCION NI REPRODUCCION EN STRIPE
+1. processBillingEvent devuelve duplicate ante cualquier evento registrado, incluido failed. Riesgo alto de perder la recuperacion de un evento fallido.
+2. La deduplicacion usa filter/create sin unicidad ni exclusividad atomica. Riesgo alto de procesamiento concurrente duplicado.
+3. La clave Stripe para crear suscripciones utiliza eventId; falta identificar el checkout como operacion logica estable y reconciliar reentregas.
+4. CreateBillingCheckout fija rinno.es como URL de retorno. Debe usar origen QA antes de probar checkout.
+5. Calendario actual: aniversario de un mes desde alta, luego prorrateo hasta dia1. Hay textos UI que dicen 30 dias. Se debe conciliar con el requisito de mes natural completo antes de declarar validado.
+6. ManageBilling no implementa cambio de plan y resume fuerza active sin usar el estado devuelto por Stripe.
+
+BLOQUEO DE AUTENTICACION
+La sesion de Super Admin QA del ejecutor anterior fue destruida al terminar. Las sesiones disponibles son propietarios, sin permiso para CreateBillingCheckout/gestionar facturacion. No se conserva su contrasena ni se extraen sesiones del navegador. Para continuar la prueba real se requiere login oficial qa-superadmin@rinno.es. Si no se conoce su contrasena, Jonathan debe completar Forgot password y elegir una nueva solo en pantalla oficial. No enviar claves/codigos/contrasenas al chat. No se sustituira por privilegios de produccion ni se modificara la allowlist para evitar el login.
+URL: https://preview-sandbox--6aca8950491b4b2d74f6f62d.base44.app/login?returnTo=%2F
+
+ESTADO DE FASE 2
+Preparacion sandbox: VERIFICADA.
+Checkout399, activacion tras pago, Standard/Premium, calendario/prorrateos, rechazo/cancelacion/pendiente/duplicados, webhook real, concurrencia/recuperacion, renovacion/impago/cambio/cancelacion: NO VERIFICADOS en esta fase.
+No se ejecutaron pagos ni se repitieron regresiones locales en esta preparacion; no se atribuyen los resultados de la fase1 a la fase2.
+Evidencias anteriores preservadas. Auditoria y ZIP final de fase2 pendientes. Produccion intacta.
+
+REFERENCIAS OFICIALES CONSULTADAS
+https://docs.stripe.com/webhooks
+https://docs.stripe.com/api/idempotent_requests
+https://docs.stripe.com/billing/subscriptions/billing-cycle

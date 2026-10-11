@@ -1,0 +1,23 @@
+{
+  "name": "SalesLead",
+  "type": "object",
+  "properties": {
+    "name": { "type": "string", "maxLength": 120 },
+    "business_name": { "type": "string", "maxLength": 160 },
+    "email": { "type": "string", "format": "email" },
+    "phone": { "type": "string", "maxLength": 40 },
+    "business_type": { "type": "string", "maxLength": 80 },
+    "message": { "type": "string", "maxLength": 1000 },
+    "status": { "type": "string", "enum": ["new", "contacted", "demo", "interested", "closed"], "default": "new" },
+    "assigned_to": { "type": ["string", "null"], "format": "email" },
+    "source": { "type": "string", "maxLength": 120 },
+    "template_id": { "type": ["string", "null"], "maxLength": 80 },
+    "internal_notes": { "type": "string", "maxLength": 2000 },
+    "last_contact_at": { "type": ["string", "null"], "format": "date-time" }
+    ,"converted_business_id": { "type": ["string", "null"] }
+    ,"converted_at": { "type": ["string", "null"], "format": "date-time" }
+    ,"delivery_status": { "type": ["string", "null"], "enum": ["configuring", "waiting_owner", "ready", "published", null] }
+  },
+  "required": ["name", "business_name", "email", "phone", "business_type", "status", "source"],
+  "rls": { "read": false, "create": false, "update": false, "delete": false }
+}

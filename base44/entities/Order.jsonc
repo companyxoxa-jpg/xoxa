@@ -1,0 +1,178 @@
+{
+  "name": "Order",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string"
+    },
+    "customer_id": {
+      "type": "string",
+      "description": "Optional — null for guest checkout"
+    },
+    "customer_user_id": {
+      "type": "string",
+      "description": "User ID of the authenticated customer who placed this order. Null for guest orders. Used for secure ownership queries in Mis Pedidos."
+    },
+    "order_number": {
+      "type": "string",
+      "description": "Human-friendly sequential order number"
+    },
+    "tracking_token": {
+      "type": "string",
+      "description": "Public unguessable token for guest order tracking"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "customer_phone": {
+      "type": "string"
+    },
+    "customer_email": {
+      "type": "string"
+    },
+    "fulfillment_type": {
+      "type": "string",
+      "enum": [
+        "pickup",
+        "own_delivery",
+        "external_delivery"
+      ],
+      "default": "pickup"
+    },
+    "delivery_address": {
+      "type": "string"
+    },
+    "delivery_city": {
+      "type": "string",
+      "description": "Snapshot of delivery city at order time"
+    },
+    "delivery_postal_code": {
+      "type": "string",
+      "description": "Snapshot of delivery postal code at order time"
+    },
+    "delivery_latitude": {
+      "type": "number"
+    },
+    "delivery_longitude": {
+      "type": "number"
+    },
+    "scheduled_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "scheduled_time_start": {
+      "type": "string"
+    },
+    "scheduled_time_end": {
+      "type": "string"
+    },
+    "subtotal": {
+      "type": "integer",
+      "description": "Subtotal in cents"
+    },
+    "delivery_fee": {
+      "type": "integer",
+      "description": "Delivery fee in cents"
+    },
+    "discount": {
+      "type": "integer",
+      "description": "Discount amount in cents"
+    },
+    "tax": {
+      "type": "integer",
+      "description": "Tax amount in cents"
+    },
+    "total": {
+      "type": "integer",
+      "description": "Order total in cents"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "cash_on_delivery",
+        "card_on_delivery",
+        "online_payment"
+      ],
+      "default": "cash_on_delivery"
+    },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "paid",
+        "refunded",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "order_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "accepted",
+        "preparing",
+        "ready",
+        "out_for_delivery",
+        "completed",
+        "cancelled",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "customer_notes": {
+      "type": "string"
+    },
+    "internal_notes": {
+      "type": "string"
+    },
+    "marketing_consent": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "required": [
+    "business_id",
+    "order_number",
+    "customer_name",
+    "customer_phone",
+    "fulfillment_type",
+    "total",
+    "payment_method",
+    "payment_status",
+    "order_status"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.business_id": "{{user.data.business_id}}"
+        },
+        {
+          "$or": [
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "companyxoxa@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "ax.network.hub@gmail.com"
+              }
+            },
+            {
+              "user_condition": {
+                "role": "admin",
+                "email": "xoxamariles@gmail.com"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}

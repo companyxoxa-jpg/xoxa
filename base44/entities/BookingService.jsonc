@@ -1,0 +1,51 @@
+{
+  "name": "BookingService",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "price": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "price_type": {
+      "type": "string",
+      "enum": ["fixed", "from"],
+      "default": "fixed",
+      "description": "Use 'from' when the displayed service price is a starting price."
+    },
+    "duration_minutes": {
+      "type": "integer",
+      "minimum": 5,
+      "maximum": 480
+    },
+    "image": {
+      "type": "string"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "demo_key": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "business_id",
+    "name",
+    "active"
+  ],
+  "rls": {
+    "create": false,
+    "read": false,
+    "update": false,
+    "delete": false
+  }
+}

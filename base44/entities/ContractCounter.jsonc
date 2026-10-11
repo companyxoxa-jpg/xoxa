@@ -1,0 +1,10 @@
+{
+  "name": "ContractCounter",
+  "type": "object",
+  "properties": {
+    "year": { "type": "integer" },
+    "next_number": { "type": "integer", "minimum": 1 }
+  },
+  "required": ["year", "next_number"],
+  "rls": { "read": false, "create": false, "update": false, "delete": false }
+}

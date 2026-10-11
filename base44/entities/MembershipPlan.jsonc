@@ -1,0 +1,65 @@
+{
+  "name": "MembershipPlan",
+  "type": "object",
+  "properties": {
+    "business_id": {
+      "type": "string",
+      "description": "Tenant. Plan belongs to one association."
+    },
+    "name": {
+      "type": "string",
+      "description": "Display name (e.g. Socio adulto anual)."
+    },
+    "code": {
+      "type": "string",
+      "description": "Stable code, unique within the tenant (e.g. adult-annual). Uniqueness enforced server-side."
+    },
+    "description": {
+      "type": "string"
+    },
+    "fee_amount": {
+      "type": "integer",
+      "description": "Periodic fee in cents."
+    },
+    "fee_period": {
+      "type": "string",
+      "enum": [
+        "monthly",
+        "quarterly",
+        "biannual",
+        "annual",
+        "one_time",
+        "custom"
+      ],
+      "default": "annual"
+    },
+    "duration_months": {
+      "type": "integer",
+      "description": "Validity of a membership of this plan, in months. Null = until explicitly ended."
+    },
+    "auto_renew": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "sort_order": {
+      "type": "integer",
+      "default": 0
+    }
+  },
+  "required": [
+    "business_id",
+    "name",
+    "code",
+    "fee_amount"
+  ],
+  "rls": {
+    "read": false,
+    "create": false,
+    "update": false,
+    "delete": false
+  }
+}
