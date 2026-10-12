@@ -73,7 +73,7 @@ async function bookingPublicUnlocked(client, body, now = Date.now()) {
       reference: appointment.id, status: appointment.status,
       service_name: appointment.service_name, professional_name: appointment.professional_name,
       date: appointment.date, start_time: appointment.start_time, end_time: appointment.end_time,
-      timezone: appointment.timezone, price: appointment.price,
+      timezone: appointment.timezone, price: appointment.price, price_type: appointment.price_type === 'from' ? 'from' : 'fixed',
       business_name: business.business_name, business_slug: business.slug,
     } };
   }

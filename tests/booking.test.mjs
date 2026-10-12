@@ -100,10 +100,12 @@ test('public catalog omits private schedules and cross-tenant services', async (
 });
 test('guest booking lookup requires reference plus matching contact and stays tenant scoped', async () => {
   const f = fixture();
+  f.db.BookingService[0].price_type = 'from';
   const reserved = await bookingPublic(f.client, f.request, now);
   const byEmail = await bookingPublic(f.client, { action: 'lookup', slug: 'studio', reference: reserved.appointment.id, email: 'A@EXAMPLE.TEST' }, now);
   assert.equal(byEmail.appointment.reference, reserved.appointment.id);
   assert.equal(byEmail.appointment.business_slug, 'studio');
+  assert.equal(byEmail.appointment.price_type, 'from');
   assert(!('customer_email' in byEmail.appointment));
   assert(!('phone' in byEmail.appointment));
   const byPhone = await bookingPublic(f.client, { action: 'lookup', slug: 'studio', reference: reserved.appointment.id, phone: '+34 600 000 000' }, now);

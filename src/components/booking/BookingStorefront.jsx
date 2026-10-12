@@ -1,7 +1,7 @@
 import { useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
-import { formatCurrency } from '@/lib/format';
+import { formatServicePrice } from '@/lib/format';
 import TemplateHero from '@/components/store/TemplateHero';
 import { templateFor } from '@/lib/templates';
 import { useBookingFlow } from '@/hooks/useBookingFlow';
@@ -34,7 +34,7 @@ export default function BookingStorefront({ business, slug }) {
           {catalog && <div className="booking-columns"><div>
             <h3>1. Elige un servicio</h3>
             <div className="booking-service-list">{catalog.services.map(s => <button key={s.id} aria-pressed={service?.id === s.id} className="booking-service" onClick={() => flow.selectService(s)}>
-              {s.image && <img src={s.image} alt="" />}<span><strong>{s.name}</strong><small>{s.description}</small><small>{s.duration_minutes} min</small></span><b>{s.price_type === 'from' ? 'Desde ' : ''}{formatCurrency(s.price)}</b>
+              {s.image && <img src={s.image} alt="" />}<span><strong>{s.name}</strong><small>{s.description}</small><small>{s.duration_minutes} min</small></span><b>{formatServicePrice(s.price, s.price_type)}</b>
             </button>)}</div>
             {!catalog.services.length && <p>Pronto podrás reservar nuestros servicios.</p>}
             {service && <section className="booking-step"><h3>2. Tu profesional</h3><div className="booking-professionals"><button className="booking-professional" aria-pressed={professional?.id === 'any'} onClick={() => flow.selectProfessional({id:'any',name:'Indiferente'})}><span className="booking-avatar">✦</span><strong>Indiferente</strong><small>Cualquier profesional disponible</small></button>{catalog.professionals.filter(p => p.service_ids.includes(service.id)).map(p => <button key={p.id} className="booking-professional" aria-pressed={professional?.id === p.id} onClick={() => flow.selectProfessional(p)}>
@@ -43,7 +43,7 @@ export default function BookingStorefront({ business, slug }) {
             {professional && <section className="booking-step"><h3>3. Fecha y hora</h3><label>Fecha de la cita<input type="date" value={date} onChange={e => flow.setDate(e.target.value)} /></label><p className="booking-help">Horas del negocio: {catalog.timezone}. Reservas con al menos 30 minutos de antelación, hasta 90 días.</p>
               {loadingSlots ? <p role="status">Buscando horas disponibles…</p> : date && <div className="booking-times">{slots.map(s => <button key={s.time} aria-pressed={time === s.time} onClick={() => flow.selectTime(s.time)}>{s.time}</button>)}{!slots.length && <p>No quedan horas disponibles. Prueba otra fecha.</p>}</div>}
             </section>}
-          </div><aside className="booking-summary"><p className="template-eyebrow">Tu selección</p><h3>{service?.name || 'Tu próxima visita'}</h3><p>{professional?.name || 'Elige servicio y profesional'}</p>{service && <p>{service.duration_minutes} minutos · {formatCurrency(service.price)}</p>}{date && <p>{date} {time && `· ${time}`}</p>}
+          </div><aside className="booking-summary"><p className="template-eyebrow">Tu selección</p><h3>{service?.name || 'Tu próxima visita'}</h3><p>{professional?.name || 'Elige servicio y profesional'}</p>{service && <p>{service.duration_minutes} minutos · {formatServicePrice(service.price, service.price_type)}</p>}{date && <p>{date} {time && `· ${time}`}</p>}
             {time && <form onSubmit={e => { e.preventDefault(); flow.reserve(); }}><h3>4. Tus datos</h3>
               <label>Nombre<input required autoComplete="name" minLength={2} maxLength={100} value={name} onChange={e => flow.setName(e.target.value)} /></label>
               <label>Teléfono<input required type="tel" autoComplete="tel" pattern="[+()0-9\s-]{7,25}" value={phone} onChange={e => flow.setPhone(e.target.value)} /></label>

@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { useAuth } from "@/lib/AuthContext";
 import { getBusinessId } from "@/lib/rinno";
 import { resolveBranding, modeFor } from "@/lib/templates";
-import { formatCurrency } from "@/lib/format";
+import { formatServicePrice } from "@/lib/format";
 import { Calendar, Users, Sparkles, Clock, ShoppingBag, Package, Settings, ChevronRight } from "lucide-react";
 
 const STATE_LABELS = { pending: "Pendiente", confirmed: "Confirmada", completed: "Completada", no_show: "No_show", cancelled: "Cancelada" };
@@ -113,7 +113,7 @@ export default function SpaHome({ business }) {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-foreground text-sm truncate">{a.service_name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{a.customer_name} · con {a.professional_name} · {formatCurrency(a.price)}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{a.customer_name} · con {a.professional_name} · {formatServicePrice(a.price, a.price_type)}</p>
                 </div>
                 <span className={`text-[10px] font-semibold px-2.5 py-1 rounded-full ${STATUS_TONE[a.status] || "bg-muted text-muted-foreground"}`}>{STATE_LABELS[a.status] || a.status}</span>
               </article>

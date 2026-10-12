@@ -39,13 +39,35 @@ test('guest lookup requires an exact order reference, not a query operator', asy
   assert.equal(f.queries.length, 0);
 });
 test('public storefront and checkout reject a non-string tenant selector', async () => {
-  for (const handler of [storefront, createOrder]) {
+  for (const handler of [storefront]) {
     const f = fixture();
-    f.client.auth = { me: async () => null };
     const response = await handler(request({ slug: { $ne: null }, items: [{ product_id: 'x', quantity: 1 }] }), f.client);
     assert.equal(response.status, 400);
     assert.equal(f.queries.length, 0);
   }
+  const f = fixture();
+  f.client.auth = { me: async () => ({ id: 'customer-a', role: 'user', data: { rinno_role: 'customer' } }) };
+  const response = await createOrder(request({ slug: { $ne: null }, items: [{ product_id: 'x', quantity: 1 }] }), f.client);
+  assert.equal(response.status, 400);
+  assert.equal(f.queries.length, 0);
+});
+test('CreateOrder denies anonymous, non-customer and unavailable auth before privileged access', async () => {
+  const noPrivilegedAccess = new Proxy({}, { get() { throw new Error('Privileged entity access before customer auth'); } });
+  for (const auth of [
+    { me: async () => null },
+    { me: async () => { throw Object.assign(new Error('No session'), { status: 401 }); } },
+  ]) {
+    const response = await createOrder(request({ slug: 'shop-b' }), { auth, asServiceRole: noPrivilegedAccess });
+    assert.equal(response.status, 401);
+  }
+  for (const role of ['business_owner', 'business_staff', 'commercial', 'super_admin']) {
+    const user = { id: 'actor', role: role === 'super_admin' ? 'admin' : 'user', data: { rinno_role: role, business_id: 'B' } };
+    const response = await createOrder(request({ slug: 'shop-b' }), { auth: { me: async () => user }, asServiceRole: noPrivilegedAccess });
+    assert.equal(response.status, 403, role);
+  }
+  const unavailable = { me: async () => { throw Object.assign(new Error('Provider unavailable'), { status: 503 }); } };
+  const failedClosed = await createOrder(request({ slug: 'shop-b' }), { auth: unavailable, asServiceRole: noPrivilegedAccess });
+  assert.equal(failedClosed.status, 500);
 });
 test('valid bearer tracking and exact guest lookup remain available', async () => {
   const f = fixture();

@@ -1,6 +1,6 @@
 import { Image } from "@/components/ui/image";
 import { Clock, ArrowRight } from "lucide-react";
-import { formatCurrency } from "@/lib/format";
+import { formatServicePrice } from "@/lib/format";
 
 const BARBER_EDITORIAL_IMAGES = [
   "https://images.unsplash.com/photo-1621605815971-fbc98d665033?auto=format&fit=crop&w=900&q=88",
@@ -44,7 +44,7 @@ export default function BarberServices({ services, selected, onSelect, branding 
                 <p className="inline-flex items-center gap-1.5 text-xs text-muted-foreground mt-2"><Clock className="w-3.5 h-3.5" style={{ color: accent }} />{s.duration_minutes} min</p>
               </div>
               <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-2 pl-0 sm:pl-2 sm:pr-1">
-                <p className="font-bold text-lg" style={{ color: accent }}>{formatCurrency(s.price)}</p>
+                <p className="font-bold text-lg" style={{ color: accent }}>{formatServicePrice(s.price, s.price_type)}</p>
                 <span className="inline-flex items-center gap-1 text-xs font-semibold" style={{ color: accent }}>{active ? "Seleccionado" : "Reservar"}<ArrowRight className="w-3.5 h-3.5" /></span>
               </div>
             </button>

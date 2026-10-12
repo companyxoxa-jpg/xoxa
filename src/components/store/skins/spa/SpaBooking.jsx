@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/lib/AuthContext";
 import { Check, Calendar, ChevronLeft, User as UserIcon, Phone } from "lucide-react";
-import { formatCurrency } from "@/lib/format";
+import { formatServicePrice } from "@/lib/format";
 
 // Belleza/Spa V2 — booking as a calm, one-step-at-a-time wizard inside a single
 // centered card, with a progress indicator and a running summary. Distinct
@@ -72,7 +72,7 @@ export default function SpaBooking({ flow, branding, slug, bookingRef }) {
                 {catalog.services.map(s => (
                   <button key={s.id} onClick={() => { flow.selectService(s); setStep(2); }} className="w-full flex items-center justify-between gap-3 text-left p-3.5 rounded-2xl border transition-colors hover:bg-muted/50" style={{ borderColor: service?.id === s.id ? accent : "hsl(var(--border))" }}>
                     <span className="min-w-0"><span className="block font-medium text-foreground">{s.name}</span><span className="block text-xs text-muted-foreground mt-0.5">{s.duration_minutes} min</span></span>
-                    <span className="font-semibold whitespace-nowrap" style={{ color: accent }}>{formatCurrency(s.price)}</span>
+                    <span className="font-semibold whitespace-nowrap" style={{ color: accent }}>{formatServicePrice(s.price, s.price_type)}</span>
                   </button>
                 ))}
                 {!catalog.services.length && <p className="text-sm text-muted-foreground">Pronto podrás reservar.</p>}

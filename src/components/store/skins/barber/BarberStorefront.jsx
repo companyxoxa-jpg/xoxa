@@ -14,6 +14,7 @@ import CartToast from "@/components/store/CartToast";
 import ProductDetailSheet from "@/components/store/ProductDetailSheet";
 import { Calendar, ShoppingBag } from "lucide-react";
 import TemplateIntro from "@/components/store/TemplateIntro";
+import "./elixir.css";
 
 // Template Engine V2 — Barbería (barber skin). Booking-first storefront:
 // editorial hero → services → professionals → inline booking flow → info.
@@ -31,6 +32,7 @@ export default function BarberStorefront({ data, slug }) {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const isHybrid = modeFor(business) === "HYBRID";
+  const isElixir = slug === "elixir-barber";
   const commerceProducts = isHybrid ? (products || []).filter(p => p.is_available) : [];
 
   function scrollToBooking() { bookingRef.current?.scrollIntoView({ behavior: "smooth" }); }
@@ -40,7 +42,7 @@ export default function BarberStorefront({ data, slug }) {
   function handleProductClick(p) { setSelectedProduct(p); setSheetOpen(true); }
 
   return (
-    <div className="barber-experience min-h-screen bg-background pb-28">
+    <div className="barber-experience min-h-screen bg-background pb-28" data-elixir={isElixir ? "true" : undefined}>
       <TemplateIntro variant="barber" name={business.business_name} slug={slug}/>
       <BarberHeader business={business} branding={branding} slug={slug} onReserve={scrollToBooking} />
 
@@ -59,7 +61,7 @@ export default function BarberStorefront({ data, slug }) {
         <BarberProfessionals professionals={flow.catalog?.professionals} service={flow.service} onSelect={handleSelectProfessional} branding={branding} />
         <BarberBooking flow={flow} branding={branding} slug={slug} bookingRef={bookingRef} />
 
-        {slug === 'elixir-barber' && (
+        {isElixir && (
           <section id="productos" aria-labelledby="elixir-products-title" className="mx-4 sm:mx-6 mt-12 rounded-3xl border border-amber-400/30 bg-gradient-to-br from-zinc-950 via-zinc-900 to-black p-6 sm:p-9 text-white shadow-xl">
             <div className="mx-auto flex max-w-5xl flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="max-w-2xl">

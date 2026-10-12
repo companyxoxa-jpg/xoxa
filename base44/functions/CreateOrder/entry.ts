@@ -1,21 +1,21 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.44';
-import { isCustomer, ensureMembership } from '../../shared/rinno.ts';
+import { isCustomer, ensureMembership, readAuthenticatedUser } from '../../shared/rinno.ts';
 import { wallToUTC, zonedParts } from '../../shared/booking.js';
 
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
+    const authUser = await readAuthenticatedUser(base44);
+    if (!authUser) {
+      return Response.json({ error: "Inicia sesión como cliente para realizar el pedido" }, { status: 401 });
+    }
+    if (!isCustomer(authUser)) {
+      return Response.json({ error: "Esta cuenta no tiene permisos para realizar pedidos como cliente" }, { status: 403 });
+    }
+
     const body = await req.json();
 
     const { slug, items, fulfillment_type, scheduled_date, scheduled_time_start, scheduled_time_end, customer, payment_method, marketing_consent } = body;
-
-    // Detect authenticated customer (null for guest checkout — guest flow stays intact)
-    let authUser = null;
-    let authIsCustomer = false;
-    try {
-      authUser = await base44.auth.me();
-      authIsCustomer = isCustomer(authUser);
-    } catch (e) { /* guest */ }
 
     // --- Validate required fields ---
     if (typeof slug !== 'string' || !slug.trim() || slug.length > 200 || !items || !Array.isArray(items) || items.length === 0) {
@@ -190,7 +190,7 @@ export default async function(req) {
       customer_name: customer.first_name + (customer.last_name ? " " + customer.last_name : ""),
       customer_phone: customer.phone,
       customer_email: customer.email || null,
-      customer_user_id: authUser?.id || null,
+      customer_user_id: authUser.id,
       fulfillment_type,
       delivery_address: fulfillment_type === "own_delivery" ? customer.address : null,
       delivery_city: fulfillment_type === "own_delivery" ? (customer.city || null) : null,
@@ -216,42 +216,14 @@ export default async function(req) {
     );
 
     // --- Create or update customer membership (metrics updated on order completion, not creation) ---
-    if (authIsCustomer && authUser) {
-      // Authenticated customer — ensure a membership exists and link it
-      await ensureMembership(base44, authUser.id, bid, {
-        first_name: customer.first_name, last_name: customer.last_name || "",
-        phone: customer.phone, email: customer.email, marketing_consent,
-      });
-    } else {
-      // Guest checkout — create/update a Customer record by phone (no user link)
-      const existingCustomers = await base44.asServiceRole.entities.Customer.filter({
-        business_id: bid, phone: customer.phone,
-      });
-      if (existingCustomers.length > 0) {
-        const c = existingCustomers[0];
-        await base44.asServiceRole.entities.Customer.update(c.id, {
-          marketing_consent: marketing_consent || c.marketing_consent,
-          email: customer.email || c.email,
-        });
-      } else {
-        await base44.asServiceRole.entities.Customer.create({
-          business_id: bid,
-          first_name: customer.first_name,
-          last_name: customer.last_name || "",
-          phone: customer.phone,
-          email: customer.email || null,
-          whatsapp_phone: customer.phone,
-          total_orders: 0, total_spent: 0, last_order_at: null,
-          marketing_consent: marketing_consent || false,
-          status: "active",
-        });
-      }
-    }
+    await ensureMembership(base44, authUser.id, bid, {
+      first_name: customer.first_name, last_name: customer.last_name || "",
+      phone: customer.phone, email: customer.email, marketing_consent,
+    });
 
     return Response.json({
       order_id: order.id,
       order_number,
-      tracking_token,
       total,
       order_status: "pending",
     });

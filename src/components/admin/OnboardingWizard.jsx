@@ -12,7 +12,7 @@ import { Loader2, Check, ArrowRight, ArrowLeft, Store, Palette, Settings, Credit
 import { cn } from "@/lib/utils";
 import { normalizeBillingMonthlyPrice } from "@/lib/billingPlan";
 import { TEMPLATES } from "../../../base44/shared/templates.js";
-import { elixirInitialBookingSetup, elixirInitialClosures } from "@/lib/elixir-onboarding";
+import { elixirInitialBookingSetup, elixirInitialClosures, toBase44BookingSetup } from "@/lib/elixir-onboarding";
 
 const BUSINESS_TYPES = [
   { value: "fruit_store", label: "Frutería" },
@@ -91,10 +91,18 @@ export default function OnboardingWizard({ plans, onClose, onCreated, initialDat
     try {
       const elixirSetup = elixirInitialBookingSetup(form.business_name, form.business_type);
       const isElixir = Boolean(elixirSetup);
+      const businessMode = form.business_type === 'association' ? 'ASSOCIATION' : ['barber', 'beauty', 'hair_salon'].includes(form.business_type) ? 'BOOKING' : 'COMMERCE';
+      const socialLinks = form.business_type === 'barber' ? {
+        instagram: form.instagram.trim() || (isElixir ? 'https://www.instagram.com/elixir_barber/' : ''),
+        threads: form.threads.trim() || (isElixir ? 'https://www.threads.com/@elixir_barber?xmt=AQG0eACi6iU2iX1kcQaZLlEn3p6tJ2rBcZtVC91xAirBU50' : ''),
+        tiktok: form.tiktok.trim() || (isElixir ? 'https://www.tiktok.com/@elixirbarber.fuengirola' : ''),
+      } : {};
       const payload = {
         business: {
           business_name: form.business_name,
           business_type: form.business_type,
+          business_mode: businessMode,
+          template_id: form.template_id,
           contact_email: form.contact_email,
           contact_phone: form.contact_phone,
           whatsapp_phone: form.whatsapp_phone || form.contact_phone,
@@ -106,6 +114,7 @@ export default function OnboardingWizard({ plans, onClose, onCreated, initialDat
           template_id: form.template_id,
           logo: form.logo.trim() || (isElixir ? '/assets/brands/elixir-barber/logo.jpeg' : ''),
           ...(isElixir ? { cover_image: '/assets/brands/elixir-barber/cover.webp', headline: 'El estilo tiene nombre propio.', tagline: 'Corte, barba y cuidado en Fuengirola.' } : {}),
+          ...(Object.keys(socialLinks).length ? { social_links: socialLinks } : {}),
         },
         operation: {
           pickup_enabled: form.pickup_enabled,
@@ -113,13 +122,10 @@ export default function OnboardingWizard({ plans, onClose, onCreated, initialDat
           delivery_fee: form.delivery_fee ? Number(form.delivery_fee.replace(",", ".")) : 0,
           minimum_order: form.minimum_order ? Number(form.minimum_order.replace(",", ".")) : 0,
           ...(form.business_type === 'barber' ? { schedule: Array.from({length:7}, (_, day) => day === 0 ? { day, closed: true, continuous: true } : { day, closed: false, continuous: true, morning_open: '10:00', morning_close: '21:00' }) } : {}),
-          ...(form.business_type === 'barber' ? { social_links: isElixir ? {
-            instagram: form.instagram.trim() || 'https://www.instagram.com/elixir_barber/',
-            threads: form.threads.trim() || 'https://www.threads.com/@elixir_barber?xmt=AQG0eACi6iU2iX1kcQaZLlEn3p6tJ2rBcZtVC91xAirBU50',
-            tiktok: form.tiktok.trim() || 'https://www.tiktok.com/@elixirbarber.fuengirola',
-          } : { instagram: form.instagram.trim(), threads: form.threads.trim(), tiktok: form.tiktok.trim() } } : {}),
+          ...(Object.keys(socialLinks).length ? { social_links: socialLinks } : {}),
           ...(isElixir ? { booking_closed_dates: elixirInitialClosures, booking_setup: elixirSetup } : {}),
         },
+        ...(elixirSetup ? { booking_setup: toBase44BookingSetup(elixirSetup, elixirInitialClosures) } : {}),
         association: form.business_type === "association" ? {
           minimum_age: Number(form.minimum_age),
           default_monthly_limit_grams: Number(form.default_monthly_limit_grams),
