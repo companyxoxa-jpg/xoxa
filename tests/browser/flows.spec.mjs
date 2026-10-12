@@ -109,10 +109,35 @@ test('admin and establishment workspaces remain usable on narrow mobile screens'
   }
 });
 
-test('a guest order is completed from narrow mobile; staff updates the customer exactly once', async ({ browser }) => {
+test('orders require a customer session; customer completes order from narrow mobile and staff updates the customer exactly once', async ({ browser }) => {
   const guest = await browser.newContext({viewport:{width:320,height:700}});
   await guest.addInitScript(() => localStorage.setItem('test_role', 'guest'));
-  const page = await guest.newPage();
+  const guestPage = await guest.newPage();
+  await guestPage.goto('/store/rinno-demo-12');
+  await guestPage.getByRole('button', { name: /^Añadir / }).first().click();
+  await guestPage.getByRole('button', { name: /Ver carrito ·/ }).click();
+  await guestPage.getByRole('button', { name: /tramitar|continuar|realizar/i }).click();
+  await expect(guestPage.getByRole('heading', { name: 'Inicia sesión para pedir' })).toBeVisible();
+  await expect(guestPage.getByRole('link', { name: 'Iniciar sesión', exact: true })).toHaveAttribute('href', /returnTo/);
+  await expect(guestPage.getByRole('link', { name: 'Crear cuenta de cliente', exact: true })).toHaveAttribute('href', /returnTo/);
+  expect(await guestPage.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+  await guest.close();
+
+  const owner = await browser.newContext({viewport:{width:320,height:700}});
+  await owner.addInitScript(() => { localStorage.setItem('base44_access_token','test-only'); localStorage.setItem('test_role', 'owner'); });
+  const ownerPage = await owner.newPage();
+  await ownerPage.goto('/store/rinno-demo-12');
+  await ownerPage.getByRole('button', { name: /^Añadir / }).first().click();
+  await ownerPage.getByRole('button', { name: /Ver carrito ·/ }).click();
+  await ownerPage.getByRole('button', { name: /tramitar|continuar|realizar/i }).click();
+  await expect(ownerPage.getByRole('heading', { name: 'Cambia a una cuenta de cliente' })).toBeVisible();
+  await expect(ownerPage.getByRole('button', { name: 'Usar otra cuenta', exact: true })).toBeVisible();
+  await expect(ownerPage.getByRole('button', { name: /CONFIRMAR PEDIDO/ })).toHaveCount(0);
+  await owner.close();
+
+  const customer = await browser.newContext({viewport:{width:320,height:700}});
+  await customer.addInitScript(() => { localStorage.setItem('base44_access_token','test-only'); localStorage.setItem('test_role', 'customer'); });
+  const page = await customer.newPage();
   await page.goto('/store/rinno-demo-12');
   await page.getByRole('button', { name: /^Añadir / }).first().click();
   await page.getByRole('button', { name: /Ver carrito ·/ }).click();
@@ -127,9 +152,9 @@ test('a guest order is completed from narrow mobile; staff updates the customer 
   await firstName.fill('Cliente Prueba');
   await page.getByPlaceholder('Teléfono *').fill('600000000');
   await page.getByRole('button', { name: /CONFIRMAR PEDIDO/ }).click();
-  await expect(page).toHaveURL(/\/track\//);
+  await expect(page).toHaveURL(/\/store\/rinno-demo-12\/order-confirmed\//);
   await expect(page.getByRole('heading', { name: '¡Pedido recibido!' })).toBeVisible();
-  await guest.close();
+  await customer.close();
   const staff = await browser.newContext();
   await staff.addInitScript(() => {
     localStorage.setItem('base44_access_token', 'test-only');

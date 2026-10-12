@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/lib/AuthContext";
@@ -50,7 +50,7 @@ export default function StoreCheckout() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { items, total, clearCart, primaryColor } = useCart();
-  const { user } = useAuth();
+  const { user, isLoadingAuth } = useAuth();
   const authIsCustomer = isCustomer(user);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -68,6 +68,10 @@ export default function StoreCheckout() {
   const [selectedAddressId, setSelectedAddressId] = useState(null);
 
   const color = primaryColor || "#16A34A";
+  const checkoutPath = `/store/${slug}/checkout`;
+  const returnTo = encodeURIComponent(checkoutPath);
+  const loginPath = `/store/${slug}/login?returnTo=${returnTo}`;
+  const registerPath = `/store/${slug}/register?returnTo=${returnTo}`;
 
   useEffect(() => {
     if (items.length === 0) { navigate(`/store/${slug}`); return; }
@@ -137,6 +141,10 @@ export default function StoreCheckout() {
   const remaining = minOrder - total;
 
   async function handleConfirm() {
+    if (!authIsCustomer) {
+      setError("Inicia sesión con una cuenta de cliente para realizar el pedido.");
+      return;
+    }
     if (confirmRef.current || submitting) return;
     confirmRef.current = true;
 
@@ -164,11 +172,7 @@ export default function StoreCheckout() {
         setError(res.data.error);
       } else {
         clearCart();
-        if (authIsCustomer) {
-          navigate(`/store/${slug}/order-confirmed/${res.data.order_id}`, { replace: true });
-        } else {
-          navigate(`/track/${res.data.tracking_token}`, { replace: true });
-        }
+        navigate(`/store/${slug}/order-confirmed/${res.data.order_id}`, { replace: true });
       }
     } catch (e) {
       setError(e.response?.data?.error || e.message || "Error al crear el pedido");
@@ -178,7 +182,7 @@ export default function StoreCheckout() {
     }
   }
 
-  if (loading) {
+  if (loading || isLoadingAuth) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <Loader2 className="w-8 h-8 animate-spin" style={{ color }} />
@@ -191,6 +195,57 @@ export default function StoreCheckout() {
       <div className="flex flex-col items-center justify-center min-h-screen px-6">
         <StoreIcon className="w-12 h-12 text-muted-foreground mb-4" />
         <p className="text-sm text-muted-foreground">{error}</p>
+      </div>
+    );
+  }
+
+  if (!authIsCustomer) {
+    const hasOtherSession = Boolean(user);
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <header className="bg-card border-b border-border px-4 py-3 flex items-center gap-3">
+          <button onClick={() => navigate(`/store/${slug}/cart`)} aria-label="Volver al carrito" className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-muted">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <h1 className="font-heading font-bold text-lg text-foreground">Finalizar compra</h1>
+        </header>
+        <main className="flex-1 flex items-center justify-center px-5 py-12">
+          <section className="w-full max-w-md rounded-2xl border border-border bg-card p-6 sm:p-8 text-center shadow-sm">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl" style={{ backgroundColor: `${color}15` }}>
+              <StoreIcon className="h-7 w-7" style={{ color }} />
+            </div>
+            <h2 className="font-heading text-xl font-bold text-foreground">
+              {hasOtherSession ? "Cambia a una cuenta de cliente" : "Inicia sesión para pedir"}
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-muted-foreground">
+              {hasOtherSession
+                ? "La sesión actual es de gestión y no puede realizar pedidos. Cierra esa sesión e inicia con tu cuenta de cliente."
+                : "Para confirmar tu pedido, inicia sesión o crea una cuenta de cliente. Tu carrito seguirá guardado."}
+            </p>
+            {hasOtherSession ? (
+              <button
+                type="button"
+                onClick={() => base44.auth.logout(`${window.location.origin}${loginPath}`)}
+                className="mt-6 w-full rounded-xl px-4 py-3 text-sm font-semibold text-white"
+                style={{ backgroundColor: color }}
+              >
+                Usar otra cuenta
+              </button>
+            ) : (
+              <div className="mt-6 grid gap-3">
+                <Link to={loginPath} className="rounded-xl px-4 py-3 text-sm font-semibold text-white" style={{ backgroundColor: color }}>
+                  Iniciar sesión
+                </Link>
+                <Link to={registerPath} className="rounded-xl border border-border px-4 py-3 text-sm font-semibold text-foreground hover:bg-muted">
+                  Crear cuenta de cliente
+                </Link>
+              </div>
+            )}
+            <Link to={`/store/${slug}/cart`} className="mt-5 inline-flex text-sm font-medium hover:underline" style={{ color }}>
+              Volver al carrito
+            </Link>
+          </section>
+        </main>
       </div>
     );
   }

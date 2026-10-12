@@ -4,7 +4,7 @@ import { readdir, readFile } from 'node:fs/promises';
 import { loadHandler } from './load-handler.mjs';
 import { isSuperAdmin } from '../base44/shared/rinno.ts';
 
-const publicFunctions = new Set(['GetStorefront', 'ResolveBusiness', 'TrackOrder', 'GuestOrderLookup', 'CreateOrder', 'BookingPublic', 'BillingWebhook']);
+const publicFunctions = new Set(['GetStorefront', 'ResolveBusiness', 'TrackOrder', 'GuestOrderLookup', 'BookingPublic', 'BillingWebhook']);
 // These imports depend on Deno's npm resolver; exercised separately by existing
 // contract/document tests. This suite does not claim their runtime coverage.
 const denoOnly = new Set(['ManageContract', 'ManageDocuments']);
